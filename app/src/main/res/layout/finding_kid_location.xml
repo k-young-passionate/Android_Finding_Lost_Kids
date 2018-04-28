@@ -9,4 +9,15 @@
 
 
 
+
+    <ImageView
+        android:id="@+id/mapView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:contentDescription="call the map of the place the registered kid is in"
+        app:srcCompat="@android:drawable/alert_light_frame" />
+
+
+
+
 </android.support.design.widget.CoordinatorLayout>
