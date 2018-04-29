@@ -14,6 +14,7 @@ import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -38,7 +39,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     AlertDialog.Builder builder = null;
     private ImageView img;
     private EditText editText;
-    private String kidName;
+    private Editable kidName;
 
     private CharSequence[] items = {"사진 찍기", "앨범 선택", "취소"};
 
@@ -56,40 +57,55 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);
+        intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
         setContentView(R.layout.kid_photo_upload);
 
-        builder = new AlertDialog.Builder(this);
+        /**
+         * 카메라, 저장장치 기능에 대한 권한 요청
+         */
+
+        if(checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, MY_CAMERA_REQUEST_CODE);
+        }
+        if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_CAMERA_REQUEST_CODE);
+        }
+        if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_CAMERA_REQUEST_CODE);
+        }
+
+
+
+        builder = new AlertDialog.Builder(this);    // 사진을 눌렀을 경우 사진 찍기, 앨범 선택 창이 뜨게 함
+
+
+        /**
+         * 뷰에 대한 연동 처리
+         */
 
         Button btn = (Button)findViewById(R.id.upload_button);
         img = (ImageView)findViewById(R.id.kidView);
         editText = (EditText)findViewById(R.id.Kid_Name);
-        kidName = editText.toString();
+        kidName = editText.getText();
+
+        System.out.println("kidName: " + kidName);
+
+        /**
+         * 이미지를 눌렀을 경우 동작
+         */
 
         img.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-
 
                 builder.setTitle("업로드할 이미지 선택").setItems(items, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         switch(which){
                             case PICK_FROM_CAMERA:
-                                if(checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
-                                   requestPermissions(new String[]{Manifest.permission.CAMERA}, MY_CAMERA_REQUEST_CODE);
-                                }
-                                if(checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-                                    requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_CAMERA_REQUEST_CODE);
-                                }
-                                if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-                                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_CAMERA_REQUEST_CODE);
-                                }
-
                                 doTakePhotoAction();
                                 break;
                             case PICK_FROM_ALBUM:
-                                Toast.makeText(getApplicationContext(), "albumListener", Toast.LENGTH_LONG).show();
                                 doTakeAlbumAction();
                                 break;
                             default:
@@ -98,20 +114,21 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                         }
                     }
                 }).show();
-
-                Toast.makeText(getApplicationContext(), "Image Clicked", Toast.LENGTH_LONG).show();
-
             }
-
-
         });
+
+
+        /**
+         * 업로드 버튼을 눌렀을 경우 동작
+         */
 
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 try {
                     /* 이미지 업로드 */
-                    if(kidName != null) {
+                    if(kidName.length() != 0) {
+                        Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
                         startActivity(intenttofindinglocationactivity);
                     } else {
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
@@ -213,6 +230,11 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         }
     }
 
+
+    /**
+     * Crop 한 이미지 저장
+     */
+    
     private void storeCropImage(Bitmap bitmap, String filePath){
         String dirPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Finding_Kid_Location";
         File directory_FKL = new File(dirPath);
