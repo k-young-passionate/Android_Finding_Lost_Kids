@@ -2,10 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.kyshi.finding_lost_kid_application">
 
-
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.CAMERA2" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-feature
+        android:name="android.hardware.camera2"
+        android:required="true"/>
 
     <application
         android:allowBackup="true"
@@ -22,20 +26,23 @@
         <activity android:name="com.example.kyshi.finding_lost_kids_application.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <provider
-            android:authorities="com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity.fileprovider"
             android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity.fileprovider"
             android:exported="false"
-            android:grantUriPermissions="true" >
+            android:grantUriPermissions="true">
             <meta-data
-                android:resource="@xml/file_path"
-                android:name="android.support.FILE_PROVIDER_PATHS" />
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_path" />
         </provider>
 
+        <activity android:name="com.example.kyshi.finding_lost_kids_application.CountNumber" />
+        <activity android:name="com.example.kyshi.finding_lost_kids_application.Kid_Upload_Activity"></activity>
     </application>
 
 </manifest>

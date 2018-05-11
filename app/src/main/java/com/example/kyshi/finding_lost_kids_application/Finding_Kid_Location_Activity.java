@@ -34,7 +34,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if(event.getAction() == MotionEvent.ACTION_UP){
-                    Toast.makeText(getApplicationContext(),"Map Untouched! From X: " + event.getX() + ", Y: " + event.getY(), Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(),"Map Untouched! From X: " + event.getX() + ", Y: " + event.getY(), Toast.LENGTH_SHORT).show();
                     return true;
                 }
 
@@ -44,7 +44,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                 }
 
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
-                    Toast.makeText(getApplicationContext(),"Map Touched! From X: " + event.getX() + ", Y: " + event.getY(), Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(),"Map Touched! From X: " + event.getX() + ", Y: " + event.getY(), Toast.LENGTH_SHORT).show();
                     return true;
                 }
 

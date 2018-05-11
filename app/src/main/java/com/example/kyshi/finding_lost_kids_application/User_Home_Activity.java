@@ -14,6 +14,7 @@ import com.example.kyshi.finding_lost_kid_application.R;
 public class User_Home_Activity extends AppCompatActivity {
     private Context mContext = this;
     private Intent intenttokidphotouploadactivity = null;
+    private Intent getintent = null;
     private EditText Tag_sn = null;
 
     @Override
@@ -22,6 +23,7 @@ public class User_Home_Activity extends AppCompatActivity {
         setContentView(R.layout.activity_user_home);
 
         intenttokidphotouploadactivity = new Intent(mContext, Kid_Photo_Upload_Activity.class);     // 다음 Activity 로 넘어가기 위한 intent 설정
+        getintent = getIntent();
 
         /**
          * Layout view 들과 연동
@@ -38,19 +40,24 @@ public class User_Home_Activity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
+                String tag_sn = Tag_sn.getText().toString();
                 try {
                     /* 서버 연결 시도 추가 필요
                      * Try Catch 문은 서버 연결 지연이 될 경우를 처리하는 용도임
                      * If 문은 session 코드를 안 넣었은 경우를 확인하는 용도임
                      * */
-                    if(Tag_sn.getText().length() != 0) {
+
+                    if(tag_sn.length() != 0) {
+                        //intenttokidphotouploadactivity.putExtra("num", getintent.getExtras().getInt("num"));
+                        //intenttokidphotouploadactivity.putExtra("count", getintent.getExtras().getInt("count"));
                         startActivity(intenttokidphotouploadactivity);
-                        Toast.makeText(getApplicationContext(), "태그 코드: " + Tag_sn.getText(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "태그 코드: " + tag_sn, Toast.LENGTH_LONG).show();
                     } else {
                         Toast.makeText(getApplicationContext(), "태그 코드를 확인해주세요.", Toast.LENGTH_LONG).show();
                     }
                 } catch(Exception e){
                     Toast.makeText(getApplicationContext(), "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
                 }
 
             }

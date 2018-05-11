@@ -6,10 +6,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -28,29 +29,32 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 
-import static android.content.DialogInterface.BUTTON_NEGATIVE;
-import static android.content.DialogInterface.BUTTON_NEUTRAL;
-import static android.content.DialogInterface.BUTTON_POSITIVE;
-
 public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private static final int MY_CAMERA_REQUEST_CODE = 100;
     private Context mContext = this;
     private Intent intenttofindinglocationactivity = null;
+    private Intent getintent = null;
+
     AlertDialog.Builder builder = null;
     private ImageView img;
     private EditText editText;
     private Editable kidName;
+    public Kid_Information ki = new Kid_Information();
 
-    private CharSequence[] items = {"사진 찍기", "앨범 선택", "취소"};
+    private CharSequence[] items = {"사진 찍기", "취소"};
 
     private static final int PICK_FROM_CAMERA = 0;
     private static final int PICK_FROM_ALBUM = 1;
     private static final int CROP_FROM_IMAGE = 2;
 
+    private File photoFile = null;
+    String url = null;
 
-    private Uri mlmageCaptureUri;
+    private Uri mImageCaptureUri;
     private String absolutePath;
 
+    private int num;
+    private int count;
 
 
 
@@ -58,7 +62,9 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
+        getintent = getIntent();
         setContentView(R.layout.kid_photo_upload);
+
 
         /**
          * 카메라, 저장장치 기능에 대한 권한 요청
@@ -88,8 +94,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         editText = (EditText)findViewById(R.id.Kid_Name);
         kidName = editText.getText();
 
-        System.out.println("kidName: " + kidName);
-
         /**
          * 이미지를 눌렀을 경우 동작
          */
@@ -105,9 +109,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                             case PICK_FROM_CAMERA:
                                 doTakePhotoAction();
                                 break;
-                            case PICK_FROM_ALBUM:
-                                doTakeAlbumAction();
-                                break;
+
                             default:
                                 dialog.dismiss();
                                 break;
@@ -129,6 +131,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                     /* 이미지 업로드 */
                     if(kidName.length() != 0) {
                         Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
+
                         startActivity(intenttofindinglocationactivity);
                     } else {
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
@@ -151,13 +154,25 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     public void doTakePhotoAction(){
         Intent intent = new Intent((MediaStore.ACTION_IMAGE_CAPTURE));
 
-        String url = "Finding_Kid_Location/my_kid_" + String.valueOf(System.currentTimeMillis()) + ".jpg";
+        url = "Finding_Kid_Location/my_kid_" + String.valueOf(System.currentTimeMillis()) + ".jpg";
 
-        //mlmageCaptureUri = Uri.fromFile((new File(Environment.getExternalStorageDirectory(), url)));
-        mlmageCaptureUri = FileProvider.getUriForFile(mContext, "com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity.fileprovider", new File(Environment.getExternalStorageDirectory(), url));
+        photoFile = new File(Environment.getExternalStorageDirectory(), url);
 
 
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, mlmageCaptureUri);
+        if(Build.VERSION.SDK_INT > 23){
+            mImageCaptureUri = FileProvider.getUriForFile(this, "com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity.fileprovider", photoFile);
+        } else {
+            mImageCaptureUri = Uri.fromFile((new File(Environment.getExternalStorageDirectory(), url)));
+        }
+
+
+//        File photoFile = new File(Environment.getExternalStorageDirectory(), url);
+
+
+
+        intent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, mImageCaptureUri);
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + mImageCaptureUri)));
+
         startActivityForResult(intent, PICK_FROM_CAMERA);
     }
 
@@ -166,9 +181,11 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
      */
 
     public void doTakeAlbumAction(){
+
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType(MediaStore.Images.Media.CONTENT_TYPE);
         startActivityForResult(intent, PICK_FROM_ALBUM);
+
     }
 
     /**
@@ -186,45 +203,67 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         {
             case PICK_FROM_ALBUM:
             {
-                mlmageCaptureUri = data.getData();
-                Log.d("Finding_Kid_Location", mlmageCaptureUri.getPath().toString());
+                mImageCaptureUri = data.getData();
+                Log.d("Finding_Kid_Location", mImageCaptureUri.getPath().toString());
             }
 
             case PICK_FROM_CAMERA:
             {
+
+                this.grantUriPermission("com.android.camera", mImageCaptureUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 Intent intent = new Intent("com.android.camera.action.CROP");
-                intent.setDataAndType(mlmageCaptureUri, "image/*");
 
+                Toast.makeText(getApplicationContext(), "url: " + mImageCaptureUri, Toast.LENGTH_SHORT).show();
+                try {
+                    intent.setDataAndType(mImageCaptureUri, "image/*");
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
 
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 intent.putExtra("outputX", 200);
                 intent.putExtra("outputY", 200);
-                intent.putExtra("aspetX", 1);
+                intent.putExtra("aspectX", 1);
                 intent.putExtra("aspectY", 1);
                 intent.putExtra("scale", true);
                 intent.putExtra("return-data", true);
+                
                 startActivityForResult(intent, CROP_FROM_IMAGE);
                 break;
             }
 
             case CROP_FROM_IMAGE:
             {
-                final Bundle extras = data.getExtras();
+                Toast.makeText(getApplicationContext(), "hi", Toast.LENGTH_SHORT).show();
+                if(resultCode != RESULT_OK){
+                    return;
+                }
 
-                String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Finding_Kid_Location/my_kid_" + System.currentTimeMillis() + ".jpg";
+                Bundle extras = null;
+                try {
+                    extras = data.getExtras();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+                
+                String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Finding_Kid_Location/Crop_my_kid_" + System.currentTimeMillis() + ".jpg";
+                Bitmap photo = null;
 
                 if(extras != null)
                 {
-                    Bitmap photo = extras.getParcelable("data");
+                    photo = extras.getParcelable("data");
                     img.setImageBitmap(photo);
 
                     storeCropImage(photo, filePath);
                     absolutePath = filePath;
                     break;
-                }
-
-                File f = new File(mlmageCaptureUri.getPath());
-                if(f.exists()){
-                    f.delete();
+                } else {
+                    Toast.makeText(getApplicationContext(),"Wakanda Forever!: " + mImageCaptureUri, Toast.LENGTH_SHORT).show();
+                    photo = BitmapFactory.decodeFile(mImageCaptureUri.getPath());
+                    img.setImageBitmap(photo);
+                    storeCropImage(photo, url);
+                    break;
                 }
             }
         }
@@ -234,7 +273,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     /**
      * Crop 한 이미지 저장
      */
-    
+
     private void storeCropImage(Bitmap bitmap, String filePath){
         String dirPath = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Finding_Kid_Location";
         File directory_FKL = new File(dirPath);
