@@ -25,13 +25,12 @@ public class MainActivity extends AppCompatActivity {
 
         if(true){
             Toast.makeText(mContext, "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
-/*            handler.postDelayed(new Runnable() {
+            handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     startActivity(intenttocountactivity);
                 }
-            }, 2000);*/
-            startActivity(intenttocountactivity);
+            }, 1000);
         } else{
 
         }

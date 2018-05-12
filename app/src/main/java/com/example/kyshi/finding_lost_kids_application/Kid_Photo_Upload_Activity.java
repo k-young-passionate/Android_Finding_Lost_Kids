@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -20,7 +21,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.kyshi.finding_lost_kid_application.R;
@@ -34,6 +37,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private Context mContext = this;
     private Intent intenttofindinglocationactivity = null;
     private Intent getintent = null;
+
 
     AlertDialog.Builder builder = null;
     private ImageView img;
@@ -63,8 +67,13 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
         getintent = getIntent();
+
+        LinearLayout ll;
+
         setContentView(R.layout.kid_photo_upload);
 
+        ll = findViewById(R.id.kid_photo_upload_linearlayout);
+        ll.setBackgroundColor(Color.WHITE);
 
         /**
          * 카메라, 저장장치 기능에 대한 권한 요청
@@ -89,7 +98,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
          * 뷰에 대한 연동 처리
          */
 
-        Button btn = (Button)findViewById(R.id.upload_button);
+        ImageButton btn = (ImageButton)findViewById(R.id.upload_button);
         img = (ImageView)findViewById(R.id.kidView);
         editText = (EditText)findViewById(R.id.Kid_Name);
         kidName = editText.getText();
@@ -116,6 +125,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                         }
                     }
                 }).show();
+
             }
         });
 
@@ -144,6 +154,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         });
 
     }
+
 
 
 
@@ -213,7 +224,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                 this.grantUriPermission("com.android.camera", mImageCaptureUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 Intent intent = new Intent("com.android.camera.action.CROP");
 
-                Toast.makeText(getApplicationContext(), "url: " + mImageCaptureUri, Toast.LENGTH_SHORT).show();
                 try {
                     intent.setDataAndType(mImageCaptureUri, "image/*");
                 } catch (Exception e){
@@ -235,7 +245,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
             case CROP_FROM_IMAGE:
             {
-                Toast.makeText(getApplicationContext(), "hi", Toast.LENGTH_SHORT).show();
                 if(resultCode != RESULT_OK){
                     return;
                 }
@@ -259,7 +268,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                     absolutePath = filePath;
                     break;
                 } else {
-                    Toast.makeText(getApplicationContext(),"Wakanda Forever!: " + mImageCaptureUri, Toast.LENGTH_SHORT).show();
                     photo = BitmapFactory.decodeFile(mImageCaptureUri.getPath());
                     img.setImageBitmap(photo);
                     storeCropImage(photo, url);
