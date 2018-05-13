@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Finding_Lost_Kid_Application</string>
+    <string name="title_activity_finding__kid__location_">Finding_Kid_Location_Activity</string>
+    <string name="mapcall">MapCall</string>
+</resources>
