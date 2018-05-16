@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,6 +12,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.preference.Preference;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
@@ -38,12 +40,10 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private Intent intenttofindinglocationactivity = null;
     private Intent getintent = null;
 
-
     AlertDialog.Builder builder = null;
     private ImageView img;
     private EditText editText;
     private Editable kidName;
-    public Kid_Information ki = new Kid_Information();
 
     private CharSequence[] items = {"사진 찍기", "취소"};
 
@@ -57,16 +57,16 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private Uri mImageCaptureUri;
     private String absolutePath;
 
-    private int num;
-    private int count;
-
-
+    private SharedPreferences sp;
+    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
         getintent = getIntent();
+
+
 
         LinearLayout ll;
 
@@ -140,7 +140,16 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                 try {
                     /* 이미지 업로드 */
                     if(kidName.length() != 0) {
+
                         Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
+
+                        // 현재 사용상태 저장하는 sharedpreference 호출
+                        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
+
+                        // 현재 사용상태 사용으로 변경 후 commit
+                        editor = sp.edit();
+                        editor.putBoolean("isconnected", true);
+                        editor.commit();
 
                         startActivity(intenttofindinglocationactivity);
                     } else {
@@ -207,8 +216,9 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data){
         super.onActivityResult(requestCode,resultCode,data);
 
-        if(resultCode != RESULT_OK)
+         if(resultCode != RESULT_OK) {
             return;
+         }
 
         switch (requestCode)
         {
@@ -261,6 +271,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
                 if(extras != null)
                 {
+
                     photo = extras.getParcelable("data");
                     img.setImageBitmap(photo);
 

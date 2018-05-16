@@ -9,7 +9,7 @@
 
     <uses-feature
         android:name="android.hardware.camera2"
-        android:required="true"/>
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -41,8 +41,7 @@
                 android:resource="@xml/file_path" />
         </provider>
 
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.CountNumber" />
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.Kid_Upload_Activity"></activity>
+        <activity android:name="com.example.kyshi.finding_lost_kids_application.IntroductionActivity"></activity>
     </application>
 
 </manifest>
