@@ -7,7 +7,6 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -18,22 +17,28 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class User_Home_Activity extends AppCompatActivity {
+
+    // Intent, context, activity 관련 변수
     private Context mContext = this;
     private Intent intenttokidphotouploadactivity = null;
-    private Intent getintent = null;
+    public static User_Home_Activity AActivity;
+
+    // layout 관련 변수
     private EditText Tag_sn = null;
+    private ConstraintLayout cl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        ConstraintLayout cl;
         setContentView(R.layout.activity_user_home);
 
+        AActivity = User_Home_Activity.this;    // Kid_Photo_Upload_Activity 에서 여기 Activity 종료용
+
+        // layout 배경 하얗게
         cl = findViewById(R.id.user_home_activity_constraintlayout);
         cl.setBackgroundColor(Color.WHITE);
+
         intenttokidphotouploadactivity = new Intent(mContext, Kid_Photo_Upload_Activity.class);     // 다음 Activity 로 넘어가기 위한 intent 설정
-        getintent = getIntent();
 
         /**
          * Layout view 들과 연동

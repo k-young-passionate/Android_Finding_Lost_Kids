@@ -35,43 +35,50 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 public class Kid_Photo_Upload_Activity extends AppCompatActivity {
-    private static final int MY_CAMERA_REQUEST_CODE = 100;
-    private Context mContext = this;
-    private Intent intenttofindinglocationactivity = null;
-    private Intent getintent = null;
 
-    AlertDialog.Builder builder = null;
-    private ImageView img;
-    private EditText editText;
-    private Editable kidName;
-
-    private CharSequence[] items = {"사진 찍기", "취소"};
-
+    /* 상수들 */
     private static final int PICK_FROM_CAMERA = 0;
     private static final int PICK_FROM_ALBUM = 1;
     private static final int CROP_FROM_IMAGE = 2;
+    private static final int MY_CAMERA_REQUEST_CODE = 100;
 
+    /* 액티비티 관련 변수 */
+    private Context mContext = this;
+    private Intent intenttofindinglocationactivity = null;
+    User_Home_Activity aActivity;
+
+    /* 뷰 관련 변수 */
+    private ImageView img;
+    private EditText editText;
+    private Editable kidName;
+    private LinearLayout ll;
+
+    /* Alert 관련 변수 */
+    AlertDialog.Builder builder = null;
+    private CharSequence[] items = {"사진 찍기", "취소"};
+
+    /* 파일(사진) 관련 변수 */
     private File photoFile = null;
     String url = null;
-
     private Uri mImageCaptureUri;
     private String absolutePath;
 
+    /* SharedPreference 관련 변수 */
     private SharedPreferences sp;
     private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
-        getintent = getIntent();
-
-
-
-        LinearLayout ll;
-
         setContentView(R.layout.kid_photo_upload);
 
+        // 넘길 Intent
+        intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
+
+        // User_Home_Activity 종료용
+        aActivity = (User_Home_Activity) User_Home_Activity.AActivity;
+
+        // Layout 배경 하얗게
         ll = findViewById(R.id.kid_photo_upload_linearlayout);
         ll.setBackgroundColor(Color.WHITE);
 
@@ -152,6 +159,8 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                         editor.commit();
 
                         startActivity(intenttofindinglocationactivity);
+                        finish();
+                        aActivity.finish();
                     } else {
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
                     }

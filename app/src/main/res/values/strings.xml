@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">아이 Here</string>
     <string name="title_activity_finding__kid__location_">아이 Here</string>
+    <string name="mapcall">MapCall</string>
 </resources>
