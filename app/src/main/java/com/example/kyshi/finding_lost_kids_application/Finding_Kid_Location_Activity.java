@@ -39,11 +39,11 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
     private AppCompatActivity activity;
     //public  static ListViewAdapter listviewadapter;
     public static ListView listview;
-   static String[] childs = {"건영","찬우","국민","민성","좀비","좀비","좀비","좀비","좀비"};
-    boolean[] checkedItems = new boolean[childs.length];
-    private boolean isFabOpen = false;
-    private FloatingActionButton fab,fab1,fab2;
-    private Animation fab_open, fab_close, rotate_forward, rotate_backward;
+   static String[] childs = {"건영","찬우","국민","민성","좀비","좀비","좀비","좀비","좀비"}; // 현재는 그냥 string list 로 해놓았지만 이후에 서버에서 값을 받을 때에는 가변 배열로 설정
+    boolean[] checkedItems = new boolean[childs.length]; // childs 에서 chedcked (체크 표시된 ) 요소의 id 를 저장하는 배열
+    private boolean isFabOpen = false; // floating button 이 'open ' 'close' 의 상태인지 boolean 형태로 알려줌.
+    private FloatingActionButton fab,fab1,fab2; // fab: + 모양 floating button  나머지는 app_bar_main 참고
+    private Animation fab_open, fab_close, rotate_forward, rotate_backward; // fab 의 애니메이션 트리거 변수
 
     ImageView map;
     PhotoViewAttacher attacher;
@@ -71,7 +71,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
         fab_open = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_open);
         fab_close = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_close);
         rotate_forward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_forward);
-        rotate_backward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_backward);
+        rotate_backward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_backward); // res 의 anim  폴더의 동작 변수 확인
 
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -107,7 +107,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 
 
-
+ // drawerLayout 의 액션바 토글 설정 부분
         drawerToggle=new ActionBarDrawerToggle(this,drawer,R.string.navigation_drawer_open,R.string.navigation_drawer_close){
 
 
@@ -119,7 +119,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
             @Override
             public void onDrawerClosed(View drawerView) {
                 super.onDrawerClosed(drawerView);
-                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+
 
             }
         };
@@ -130,7 +130,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        navigationView.setNavigationItemSelectedListener(this);  // 네비게이션 창을 열었을때 메뉴 아이템 클릭 리스너  밑의 onNavigationItemSelectedListener 참조
 
 
 
@@ -195,13 +195,14 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            View v;
-            //Dialog 생성
+
+            //Dialog 생성 Dialog 는 팝업창이라고 생각하면됨
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
                     Finding_Kid_Location_Activity.this);
-            alertBuilder.setIcon(R.drawable.ic_menu_camera);
-            alertBuilder.setTitle("아이를 선택하세요");
+            alertBuilder.setIcon(R.drawable.ic_menu_camera); // 아이콘 설정
+            alertBuilder.setTitle("아이를 선택하세요"); // 타이틀 설정
 
+            //여러개 선택할 수있는 옵션
             alertBuilder.setMultiChoiceItems(childs, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which, boolean isChecked) {
@@ -218,7 +219,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
                             {
 
                                 child = "child";
-                                child += Integer.toString(which+1);
+                                child += Integer.toString(which+1);  // child 에 숫자 덧붙이는 항목
                                 Toast.makeText(getApplicationContext(),child,Toast.LENGTH_LONG).show();
                                 int resId = getResources().getIdentifier(child,"drawable",getPackageName());
                                 if(resId == R.drawable.child1)
@@ -229,14 +230,14 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
                                 canvas.drawBitmap(image[0],150,150,null);
                                 canvas.drawBitmap(image[1],500,500,null);
                                 canvas.drawBitmap(image[2],850,850,null);
-                            }
+                            } // 추후수정
                            map.setImageBitmap(tempBitmap);
                             attacher = new PhotoViewAttacher(map);
                             attacher.setOnViewTapListener(viewTapListener);
                         }
                     });
 
-                    //버튼
+                    //버튼 설정 부분
                     alertBuilder.setPositiveButton("Okay", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -258,7 +259,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
 
 
        }
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        //DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         //drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -303,7 +304,7 @@ public void animateFAB() {
         fab2.startAnimation(fab_close);
 
         fab1.setClickable(false);
-        fab2.setClickable(false);
+        fab2.setClickable(false); // 아이템 선택가능  기능 비활성화
         isFabOpen = false;
         Log.d("Raj", "close");
     } else {
@@ -311,7 +312,7 @@ public void animateFAB() {
         fab1.startAnimation(fab_open);
         fab2.startAnimation(fab_open);
 
-        fab1.setClickable(true);
+        fab1.setClickable(true); // 아이템 선택가능  기능 비활성화
         fab2.setClickable(true);
 
         isFabOpen = true;
