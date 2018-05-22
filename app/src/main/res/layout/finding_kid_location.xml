@@ -1,55 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.kyshi.finding_lost_kids_application.Finding_Kid_Location_Activity">
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start">
 
-
-    <RelativeLayout
+    <include
+        layout="@layout/app_bar_main"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent" />
 
-
-        <ImageView
-            android:id="@+id/mapView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/mapcall"
-            android:src="@drawable/map" />
-
-        <ImageView
-            android:id="@+id/location"
-            android:layout_width="24dp"
-            android:layout_height="26dp"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginEnd="141dp"
-            android:layout_marginTop="70dp"
-            android:contentDescription="location"
-            android:src="@drawable/location"
-            android:visibility="visible" />
-
-
-        <ImageView
-            android:id="@+id/reportbutton"
-            android:layout_width="68dp"
-            android:layout_height="78dp"
-            android:layout_above="@+id/returnbutton"
-            android:layout_alignParentEnd="true"
-            app:srcCompat="@drawable/reportbutton"/>
-
-        <ImageView
-            android:id="@+id/returnbutton"
-            android:layout_width="68dp"
-            android:layout_height="81dp"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            app:srcCompat="@drawable/returnbutton" />
-    </RelativeLayout>
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header_main"
+        app:menu="@menu/activity_main_drawer" />
 
 
 
-
-</android.support.design.widget.CoordinatorLayout>
+</android.support.v4.widget.DrawerLayout>

@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.CAMERA2" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature
         android:name="android.hardware.camera2"
@@ -41,7 +42,7 @@
                 android:resource="@xml/file_path" />
         </provider>
 
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.IntroductionActivity"></activity>
+        <activity android:name="com.example.kyshi.finding_lost_kids_application.Child_List_Activity"></activity>
     </application>
 
 </manifest>

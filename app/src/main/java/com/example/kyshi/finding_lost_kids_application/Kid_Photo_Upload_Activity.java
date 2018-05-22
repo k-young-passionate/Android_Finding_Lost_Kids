@@ -148,7 +148,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                     /* 이미지 업로드 */
                     if(kidName.length() != 0) {
 
-                        Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
+                        //Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
 
                         // 현재 사용상태 저장하는 sharedpreference 호출
                         sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
