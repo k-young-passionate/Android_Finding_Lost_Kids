@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <uses-feature
         android:name="android.hardware.camera2"
@@ -19,18 +21,32 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBkgiIi_-7ddZiMHrpNFHh3rxzW6A3Q00U" />
+
         <activity
             android:name="com.example.kyshi.finding_lost_kids_application.Finding_Kid_Location_Activity"
-            android:label="@string/title_activity_finding__kid__location_" />
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity" />
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.User_Home_Activity" />
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.MainActivity">
+            android:label="@string/title_activity_finding_kid_location" />
+        <activity
+            android:name="com.example.kyshi.finding_lost_kids_application.MainActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity"
+            android:screenOrientation="portrait" />
+        <activity android:name="com.example.kyshi.finding_lost_kids_application.User_Home_Activity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.example.kyshi.finding_lost_kids_application.LoadingActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.example.kyshi.finding_lost_kids_application.mapFind"
+            android:screenOrientation="portrait" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"
@@ -42,7 +58,6 @@
                 android:resource="@xml/file_path" />
         </provider>
 
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.Child_List_Activity"></activity>
     </application>
 
 </manifest>

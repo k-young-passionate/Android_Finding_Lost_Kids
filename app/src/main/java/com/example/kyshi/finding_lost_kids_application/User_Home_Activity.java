@@ -22,10 +22,15 @@ public class User_Home_Activity extends AppCompatActivity {
     private Context mContext = this;
     private Intent intenttokidphotouploadactivity = null;
     public static User_Home_Activity AActivity;
+    private Intent getIntent;
+    private Intent turnoverIntent;
 
     // layout 관련 변수
     private EditText Tag_sn = null;
     private ConstraintLayout cl;
+
+    //  일반 지역 변수
+    private String tag_sn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +38,9 @@ public class User_Home_Activity extends AppCompatActivity {
         setContentView(R.layout.activity_user_home);
 
         AActivity = User_Home_Activity.this;    // Kid_Photo_Upload_Activity 에서 여기 Activity 종료용
+
+        // 지난 것에서 가져온 intent
+        getIntent = getIntent();
 
         // layout 배경 하얗게
         cl = findViewById(R.id.user_home_activity_constraintlayout);
@@ -55,7 +63,7 @@ public class User_Home_Activity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                String tag_sn = Tag_sn.getText().toString();
+                tag_sn = Tag_sn.getText().toString();
                 try {
                     /* 서버 연결 시도 추가 필요
                      * Try Catch 문은 서버 연결 지연이 될 경우를 처리하는 용도임
@@ -64,10 +72,9 @@ public class User_Home_Activity extends AppCompatActivity {
 
 
                     if(tag_sn.length() != 0) {
-                        startActivity(intenttokidphotouploadactivity);
+                        //startActivity(intenttokidphotouploadactivity);    // UI 변경으로 비활성화
                         Toast.makeText(getApplicationContext(), "태그 코드: " + tag_sn, Toast.LENGTH_LONG).show();
-                        intenttokidphotouploadactivity.putExtra("tagnum", tag_sn);
-
+                        startActivityForResult(intenttokidphotouploadactivity, 0);
                     } else {
                         Toast.makeText(getApplicationContext(), "태그 코드를 확인해주세요.", Toast.LENGTH_LONG).show();
                     }
@@ -94,6 +101,24 @@ public class User_Home_Activity extends AppCompatActivity {
             data.getInt("err");
         } catch (JSONException e){
             e.printStackTrace();
+        }
+    }
+
+    protected void onActivitiResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (resultCode) {
+            case 1:
+                String name = data.getStringExtra("Name");
+                turnoverIntent = new Intent();
+                turnoverIntent.putExtra("Name", name);
+                turnoverIntent.putExtra("Tag", tag_sn);
+                setResult(1, turnoverIntent);
+                finish();
+                break;
+
+            default:
+                break;
         }
     }
 }

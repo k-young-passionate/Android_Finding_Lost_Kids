@@ -44,7 +44,8 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
     /* 액티비티 관련 변수 */
     private Context mContext = this;
-    private Intent intenttofindinglocationactivity = null;
+    private Intent intenttofindinglocationactivity;  // 현재 사용 X
+    private Intent turnoverintent;
     User_Home_Activity aActivity;
 
     /* 뷰 관련 변수 */
@@ -59,21 +60,22 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
     /* 파일(사진) 관련 변수 */
     private File photoFile = null;
-    String url = null;
+    private String url = null;
+    private Bitmap photo;
     private Uri mImageCaptureUri;
     private String absolutePath;
 
-    /* SharedPreference 관련 변수 */
-    private SharedPreferences sp;
-    private SharedPreferences.Editor editor;
+    /* SharedPreference 관련 변수 */    // 앱 뷰 변동으로 필요 X
+//    private SharedPreferences sp;
+//    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.kid_photo_upload);
 
-        // 넘길 Intent
-        intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
+        // 넘길 Intent -> 새로운 구현으로 비활성화
+        // intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
 
         // User_Home_Activity 종료용
         aActivity = (User_Home_Activity) User_Home_Activity.AActivity;
@@ -95,8 +97,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         if(checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
             requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_CAMERA_REQUEST_CODE);
         }
-
-
 
         builder = new AlertDialog.Builder(this);    // 사진을 눌렀을 경우 사진 찍기, 앨범 선택 창이 뜨게 함
 
@@ -150,17 +150,14 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
                         //Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
 
-                        // 현재 사용상태 저장하는 sharedpreference 호출
-                        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
-
-                        // 현재 사용상태 사용으로 변경 후 commit
-                        editor = sp.edit();
-                        editor.putBoolean("isconnected", true);
-                        editor.commit();
-
-                        startActivity(intenttofindinglocationactivity);
+                        turnoverintent = new Intent();
+                        turnoverintent.putExtra("Name", kidName);
+                        if(photo != null)
+                            turnoverintent.putExtra("Photo", photo);
+                        setResult(1, turnoverintent);
+                        //startActivity(intenttofindinglocationactivity);
                         finish();
-                        aActivity.finish();
+                       aActivity.finish();
                     } else {
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
                     }
@@ -276,7 +273,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                 }
                 
                 String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Finding_Kid_Location/Crop_my_kid_" + System.currentTimeMillis() + ".jpg";
-                Bitmap photo = null;
+                photo = null;
 
                 if(extras != null)
                 {

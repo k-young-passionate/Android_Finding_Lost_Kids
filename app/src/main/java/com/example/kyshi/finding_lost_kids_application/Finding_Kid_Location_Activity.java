@@ -43,6 +43,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
 
 import uk.co.senab.photoview.PhotoViewAttacher;
@@ -59,6 +61,15 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
     private HttpURLConnection httpURL;
     private BufferedReader br;
     private String servervalue;
+    AsyncTask<String, Void, String> httpGetTask;
+
+    /* 반복하기 위한 변수 */
+    private TimerTask mTask;
+    private Timer mTimer;
+
+    /* JSON 변수 */
+    JSONObject jObject;
+    JSONArray jarray;
 
     /* Layout(지도) 관련 변수*/
     private ImageView map;
@@ -91,8 +102,6 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         URL = serverconnURL + "users/asdf";
 
-
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.finding_kid_location);
 
@@ -106,81 +115,19 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         fab = (FloatingActionButton) findViewById(R.id.fab);
-        reportbutton = (FloatingActionButton) findViewById(R.id.fab1);
-        returnbutton = (FloatingActionButton) findViewById(R.id.fab2);
+        reportbutton = (FloatingActionButton) findViewById(R.id.report_fab);
+        returnbutton = (FloatingActionButton) findViewById(R.id.return_fab);
         fab_open = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_open);
         fab_close = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_close);
         rotate_forward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_forward);
         rotate_backward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_backward);
 
+        /**
+         * OnCreate 에는 기본 지도만 나오게 해주세요.
+         *
+         * 모종의 사유로 OnStart 에 서버 구현을 해놓았습니다.
+         */
 
-        /* 서버연결 */
-        AsyncTask<String, Void, String> httpGetTask = new AsyncTask<String, Void, String>() {
-
-
-            @Override
-            protected String doInBackground(String... strings) {
-                StringBuilder result = new StringBuilder();
-
-                for (String param : strings) {
-                    StringBuilder doc = new StringBuilder();
-
-                    HttpClient client = new DefaultHttpClient();
-                    HttpGet request = new HttpGet(param);
-                    request.addHeader("id", ANDROID_ID);
-                    try {
-                        HttpResponse response = client.execute(request);
-                        BufferedReader rd = new BufferedReader(
-                                new InputStreamReader(response.getEntity().getContent())
-                        );
-
-                        String line = "";
-                        while ((line = rd.readLine()) != null) {
-                            doc.append(line);
-                        }
-
-                        String document = doc.toString();
-                        if (document == null) {
-                            result.append(-1);
-                        } else {
-                            result.append(document);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        result.append(-2);
-                    }
-                }
-                return result.toString();
-            }
-
-            @Override
-            protected void onPostExecute(String result) {
-                super.onPostExecute(result);
-            }
-        };
-
-        httpGetTask.execute(URL);
-        // JSON Parsing
-            try {
-            String jsonvalue = httpGetTask.get();
-            JSONObject jObject = new JSONObject(jsonvalue);
-            JSONArray jarray = new JSONArray(jObject.get("children").toString());
-
-            String tmp = "";    // 임시로 값 확인할 변수
-            for(int i = 0; i < jarray.length(); i++){
-                JSONObject jsonObject = jarray.getJSONObject(i);
-                tmp += jsonObject.get("name") + ", ";
-            }
-            tmp += "exist";
-            Toast.makeText(mContext, "hello: " + tmp, Toast.LENGTH_SHORT).show();    // 서버 값 잘 받아오는지 확인
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        /* 서버연결 */
 
         /* 반납 버튼 눌렀을 때 */
         returnbutton.setOnClickListener(new View.OnClickListener() {
@@ -190,6 +137,13 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                 editor = sp.edit();
                 editor.putBoolean("isconnected", false);
                 editor.commit();
+
+
+                mTimer.cancel();
+
+                if(!httpGetTask.isCancelled()){
+                    httpGetTask.cancel(true);
+                }
 
                 Intent toMainActivity = new Intent(mContext, MainActivity.class);
                 Toast.makeText(mContext, "반납되었습니다.", Toast.LENGTH_LONG).show();
@@ -215,10 +169,10 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                     case R.id.fab:
                         animateFAB();
                         break;
-                    case R.id.fab1:
+                    case R.id.report_fab:
                         Log.d("Raj", "Fab 1");
                         break;
-                    case R.id.fab2:
+                    case R.id.return_fab:
                         Log.d("Raj", "Fab 2");
                         break;
                 }
@@ -327,6 +281,114 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         });
 
     }
+
+
+
+
+
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        /* 주기적 호출 */
+        mTask = new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        /* 서버연결 */
+                        httpGetTask = new AsyncTask<String, Void, String>() {
+
+
+                            @Override
+                            protected String doInBackground(String... strings) {
+                                String result = null;
+                                ServerConnection sc = new ServerConnection();
+                                result = sc.CONNECTION("users/asdf", null, ANDROID_ID);
+
+                                return result;
+                            }
+
+                            @Override
+                            protected void onPostExecute(String result) {
+                                super.onPostExecute(result);
+                            }
+                        };
+
+                        httpGetTask.execute();
+
+                        // JSON Parsing
+                        try {
+                            String jsonvalue = httpGetTask.get();
+                            jObject = new JSONObject(jsonvalue);
+                            jarray = new JSONArray(jObject.get("children").toString());
+
+                            String tmp = "";    // 임시로 값 확인할 변수
+                            for(int i = 0; i < jarray.length(); i++){
+                                JSONObject jsonObject = jarray.getJSONObject(i);
+                                tmp += jsonObject.get("name") + ", ";
+                            }
+                            tmp += "exist";
+                            Toast.makeText(mContext, "hello: " + tmp, Toast.LENGTH_SHORT).show();    // 서버 값 잘 받아오는지 확인
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        if(!httpGetTask.isCancelled()){
+                            httpGetTask.cancel(true);
+                        }
+
+                        /*
+                         * 이 안에 지도 그리기 함수를 구현하시오.
+                         * 값 받아온 것 사용법
+                         *
+                         * int x, y;
+                         * String location, tag;
+                         * for(int i = 0; i < jarray.length(); i++){
+                         *      JSONObject jsonObject = jarray.getJSONObject(i);
+                         *      tag = jsonObject.get("tag");
+                         *      x =jsonObject.get("x");
+                         *      y = jsonObject.get("y");
+                         *      location = jsonObject.get("location");
+                         * }
+                         *
+                         * 이러한 식으로 사용해서 이 안에서 지도를 매 번 업데이트 시키면 됩니다.
+                         *
+                         * 여기 안은 UI 상에서 Timer 를 맞춰 돌아가게 한 쓰레드 입니다.
+                         */
+
+
+
+                    }
+                });
+
+            }
+        };
+
+        mTimer = new Timer(false);
+
+        mTimer.schedule(mTask,1000, 4000);    // 1초에 한 번 4초마다 호출
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        mTimer.cancel();
+        try {
+            if (!httpGetTask.isCancelled()) {
+                httpGetTask.cancel(true);
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
 
     PhotoViewAttacher.OnViewTapListener viewTapListener = new PhotoViewAttacher.OnViewTapListener() {
         @Override
