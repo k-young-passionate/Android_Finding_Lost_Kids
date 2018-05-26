@@ -32,6 +32,14 @@
         android:id="@+id/include"
         layout="@layout/content_main" />
 
+    <ImageButton
+        android:id="@+id/prev"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@+id/include"
+        app:layout_anchorGravity="left|bottom"
+        app:srcCompat="?attr/actionModeCloseDrawable" />
+
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab2"
         android:layout_width="94dp"
@@ -77,4 +85,5 @@
         app:backgroundTint="@color/colorAccent"
         app:elevation="6dp"
         app:pressedTranslationZ="12dp" />
+
 </android.support.design.widget.CoordinatorLayout>

@@ -30,7 +30,7 @@ import java.io.FileOutputStream;
 public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private static final int MY_CAMERA_REQUEST_CODE = 100;
     private Context mContext = this;
-    private Intent intenttofindinglocationactivity = null;
+    private Intent Intent_To_Finding_Kid_Location = null;
     AlertDialog.Builder builder = null;
     private ImageView img;
     private EditText editText;
@@ -52,7 +52,8 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);  // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
+        Intent_To_Finding_Kid_Location = new Intent(mContext, Finding_Kid_Location_Activity.class);
+        // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
         setContentView(R.layout.kid_photo_upload);
 
         /**
@@ -123,13 +124,32 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                 try {
                     /* 이미지 업로드 */
                     if(kidName.length() != 0) {
-                        Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
-                        startActivity(intenttofindinglocationactivity);
+                        Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_SHORT).show();
+                        //dbhelp.insert(dateString,editText.getText().toString(),tag);
+
+
+
+                        /* 서버로 아이 정보 전송 하는 부분
+
+
+
+                         */
+
+                        Toast.makeText(getApplicationContext(), "아이 등록 완료", Toast.LENGTH_LONG).show();
+                        Intent intent = new Intent();
+                        intent.putExtra("String", editText.getText().toString());
+                        setResult(1, intent);
+                        finish();
+
+
                     } else {
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
                     }
                 } catch(Exception e){
                     Toast.makeText(getApplicationContext(), "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
+                    /* 네트워크 확인 코드
+                    */
+
                 }
 
             }

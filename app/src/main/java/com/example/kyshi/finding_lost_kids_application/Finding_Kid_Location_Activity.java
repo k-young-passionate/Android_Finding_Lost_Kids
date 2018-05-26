@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -33,8 +34,7 @@ import uk.co.senab.photoview.PhotoViewAttacher;
 
 public class Finding_Kid_Location_Activity extends AppCompatActivity
          implements NavigationView.OnNavigationItemSelectedListener{
-    private Context mContext = this;
-    private Intent intenttolostchild = null;
+
     private  View view;
     private AppCompatActivity activity;
     //public  static ListViewAdapter listviewadapter;
@@ -44,7 +44,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
     private boolean isFabOpen = false; // floating button 이 'open ' 'close' 의 상태인지 boolean 형태로 알려줌.
     private FloatingActionButton fab,fab1,fab2; // fab: + 모양 floating button  나머지는 app_bar_main 참고
     private Animation fab_open, fab_close, rotate_forward, rotate_backward; // fab 의 애니메이션 트리거 변수
-
+    private ImageButton prev;
     ImageView map;
     PhotoViewAttacher attacher;
     ActionBarDrawerToggle drawerToggle;
@@ -54,14 +54,19 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Context mContext = this;
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        Intent intent = getIntent();
+        final String cur_delivery = (String)intent.getSerializableExtra("String");
+        Toast.makeText(getApplicationContext(),cur_delivery,Toast.LENGTH_SHORT).show();
+        //Scroller 구현
+        //SlidingView sv = new SlidingView(this,a);
+        //View v1 = View.inflate(this,R.layout.activity_main,null);
+        //View v2 = View.inflate(this,R.layout.finding_kid_location,null);
+        //sv.addView(v2); //자식 뷰 추가
+        //sv.addView(v1); // 자식 뷰 추가
+        //setContentView(sv);
         setContentView(R.layout.finding_kid_location);
-        //activity = this;
-        //adapter 클래스 생성
-        //listviewadapter = new ListViewAdapter(activity);
-       // string = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,data);
-        //listview.setAdapter(string);
-
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -72,7 +77,19 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
         fab_close = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_close);
         rotate_forward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_forward);
         rotate_backward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_backward); // res 의 anim  폴더의 동작 변수 확인
+        prev = (ImageButton)findViewById(R.id.prev);
+        final Intent Intent_To_MainActivity = new Intent(mContext,MainActivity.class);
+        prev.setOnClickListener(new ImageButton.OnClickListener(){
 
+            @Override
+            public void onClick(View v) {
+                Intent backIntent = new Intent();
+                backIntent.putExtra("String",cur_delivery);
+
+                setResult(3,backIntent);
+                finish();
+            }
+        });
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -131,24 +148,6 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);  // 네비게이션 창을 열었을때 메뉴 아이템 클릭 리스너  밑의 onNavigationItemSelectedListener 참조
-
-
-
-         /*Bitmap image1,image2;
-        Paint paint = new Paint();
-        image1 = BitmapFactory.decodeResource(getResources(), R.drawable.map);
-        Bitmap tempBitmap = Bitmap.createBitmap(image1.getWidth(), image1.getHeight(), Bitmap.Config.RGB_565);
-        Canvas canvas = new Canvas(tempBitmap);
-        //paint.setColor(Color.WHITE);
-        //canvas.drawPaint(paint);
-        canvas.drawBitmap(image1,0,0,null);
-
-        map.setImageBitmap(tempBitmap);
-        //map.setVisibility(View.INVISIBLE);
-        //loc =(ImageView)findViewById(R.id.location);
-        attacher = new PhotoViewAttacher(map);
-
-        attacher.setOnViewTapListener(viewTapListener);*/
 
     }
 
