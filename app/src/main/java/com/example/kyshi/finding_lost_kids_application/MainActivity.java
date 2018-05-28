@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -52,6 +53,9 @@ public class MainActivity extends AppCompatActivity  {
     /* SharedPreference 관련 변수 */
     private SharedPreferences sp;
     private SharedPreferences.Editor editor;
+
+    /* 서버 관련 Asynctask */
+    AsyncTask<String, Void, String> httpPostTask;
 
     /* 지역 변수 및 상수 */
     String cur_delivery;
@@ -102,39 +106,41 @@ public class MainActivity extends AppCompatActivity  {
         next = (ImageButton)findViewById(R.id.next);
 
 
+        httpPostTask = new AsyncTask<String, Void, String>() {
+            @Override
+            protected String doInBackground(String... strings) {
+
+                ServerConnection sc = new ServerConnection();
+
+                kids = new ArrayList<Kid>();
+                kids.add(new Kid("김", "abcde"));
+                kids.add(new Kid("심", "abcdf"));
+                kids.add(new Kid("안", "abcdg"));
+                kids.add(new Kid("전", "abcdh"));  // 예시 데이터
+
+                String result = sc.CONNECTION("users/"+ ANDROID_ID, kids, ANDROID_ID, sc.MODE_POST);
+//                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
+                return result;
+            }
+        };
+
+
         /* findind_kid_location 액티비티로 넘기는 버튼 */
         next.setOnClickListener(new ImageButton.OnClickListener(){
                                     @Override
                                     public void onClick(View v) {
-                                        AsyncTask<String, Void, String> httpGetTask = new AsyncTask<String, Void, String>() {
-                                            @Override
-                                            protected String doInBackground(String... strings) {
-                                                ServerConnection sc = new ServerConnection();
-/*                                                kids = new ArrayList<Kid>();
-                                                kids.add(new Kid("김", "abcde"));
-                                                kids.add(new Kid("심", "abcdf"));
-                                                kids.add(new Kid("안", "abcdg"));
-                                                kids.add(new Kid("전", "abcdh"));*/  // 예시 데이터
-                                                String result = sc.CONNECTION("register/"+ANDROID_ID, kids, ANDROID_ID);
 
-//                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
-                                                return result;
-                                            }
-                                        };
-
-                                        httpGetTask.execute();
-
-                                        /*
+                                        httpPostTask.execute();
                                         try {
-                                            Toast.makeText(getApplicationContext(), ""+ httpGetTask.get(), Toast.LENGTH_LONG).show();
+                                            Toast.makeText(getApplicationContext(), ""+ httpPostTask.get() , Toast.LENGTH_LONG).show();
                                         } catch (InterruptedException e) {
                                             e.printStackTrace();
                                         } catch (ExecutionException e) {
                                             e.printStackTrace();
-                                        }*/ // 확인용
+                                        }
 
-                                        if(!httpGetTask.isCancelled()){
-                                            httpGetTask.cancel(true);
+                                        if(!httpPostTask.isCancelled()){
+                                            httpPostTask.cancel(true);
                                         }
 
                                         // 현재 사용상태 저장하는 sharedpreference 호출
@@ -149,6 +155,7 @@ public class MainActivity extends AppCompatActivity  {
                                         Intent_To_Finding_Kid_Location.putExtra("String",cur_delivery);
                                         Toast.makeText(getApplicationContext(),"cur: "+ cur_delivery,Toast.LENGTH_LONG);
                                         startActivityForResult(Intent_To_Finding_Kid_Location,0);
+                                        finish();
                                     }
                                 });
         register_button.setOnClickListener(new Button.OnClickListener() {

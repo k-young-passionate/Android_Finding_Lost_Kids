@@ -1,102 +1,162 @@
 package com.example.kyshi.finding_lost_kids_application;
 
+import android.util.Log;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ServerConnection {
 
-    final private static String baseURL = "http://swp3.gonetis.com:8888/";
+    /* 서버연결 관련 상수 */
+    private final static String baseURL = "http://swp3.gonetis.com:8888/";
+    public final static int MODE_GET = 0;
+    public final static int MODE_POST = 1;
+    public final static int MODE_DELETE = 2;
+
+    /* 서버연결 관련 변수 */
     private static String url;
     private static URL urlConnection;
     private static HttpURLConnection httpURLConnection;
 
-    public static String CONNECTION(String addurl, ArrayList<Kid> kids, String ANDROID_ID) {
 
-        if (addurl == null) {
-            url = baseURL;
-        } else {
-            url = baseURL + addurl;
-        }
-        InputStream is = null;
-        String result = "";
+    public static String CONNECTION(String addurl, ArrayList<Kid> kids, String ANDROID_ID, int mode) {
 
+        InputStream is = null;  // 서버에서 읽어온 데이터 저장
+        String result = "";     // 상태 반환할 값
+
+        /* url 값으로 서버에 연결 */
         try {
+            if(addurl == null){
+                url = baseURL;
+            } else {
+                url = baseURL + addurl;
+            }
             urlConnection = new URL(url);
             httpURLConnection = (HttpURLConnection) urlConnection.openConnection();
         } catch (Exception e){
             e.printStackTrace();
             return null;
         }
+        /* url 값으로 서버에 연결 */
 
-        if (url.contains("register")) {
-            try {
-                String json = "";
-
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.accumulate("id", ANDROID_ID);
-
-                JSONArray jsonArray = new JSONArray();
-
-                if (kids.isEmpty()) {
-                    jsonArray = null;
-                } else {
-                    for (Kid kid : kids) {
-                        JSONObject jsonObject_sub = new JSONObject();
-                        jsonObject_sub.accumulate("name", kid.getName());
-                        jsonObject_sub.accumulate("pic", kid.getPhoto());
-                        jsonObject_sub.accumulate("tag", kid.getTag_sn());
-                        jsonArray.put(jsonObject_sub);
+        String json = "";
+        switch (mode){
+            case MODE_GET:
+                if (url.contains("register") | url.contains("users") | url.contains("map")) {
+                    try {
+                        httpURLConnection.setDoInput(true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
+                } else {
+                    result = null;
                 }
+                break;
 
-                jsonObject.accumulate("children", jsonArray);
+            case MODE_POST:
+                if (url.contains("users")){
+                    try{
+                        /* 보낼 객체 JSON 화 */
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.accumulate("name", kids.get(1).getName());
+                        jsonObject.accumulate("tag", kids.get(1).getTag_sn());
+                        json = jsonObject.toString();
+                        /* 보낼 객체 JSON 화 */
 
-                json = jsonObject.toString();
+                        /* http 소켓 만들기 */
+                        httpURLConnection.setRequestProperty("Content-type", "application/json");
+                        httpURLConnection.setRequestMethod("POST");
+                        httpURLConnection.setDoOutput(true);
+                        httpURLConnection.setDoInput(true);
+                        /* http 소켓 만들기 */
 
-                httpURLConnection.setRequestProperty("Accept", "application/json");
-                httpURLConnection.setRequestProperty("Content-type", "application/json");
+                        /* 서버에 보내기 */
+                        OutputStream os = httpURLConnection.getOutputStream();
+                        os.write(json.getBytes("UTF-8"));
+                        os.flush();
+                        /* 서버에 보내기 */
+                    } catch(Exception e){
+                        e.printStackTrace();
+                    }
+                } else {
+                    result = null;
+                }
+                break;
 
-                httpURLConnection.setDoOutput(true);
-                httpURLConnection.setDoInput(true);
+            case MODE_DELETE:
+                if (url.contains("users")){
+                    try{
+                        /* http 소켓 만들기 */
+                        httpURLConnection.setRequestMethod("DELETE");
+                        httpURLConnection.setDoInput(true);
+                        /* http 소켓 만들기 */
+                    } catch(Exception e){
+                        e.printStackTrace();
+                    }
+                } else {
+                    result = null;
+                }
+                break;
 
-
-                OutputStream os = httpURLConnection.getOutputStream();
-                os.write(json.getBytes("UTF-8"));
-                os.flush();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else if(url.contains("users")){
-            httpURLConnection.setDoInput(true);
-        } else if (url.contains("map")) {
-            httpURLConnection.setDoInput(true);
-        } else {
-            httpURLConnection.setDoInput(true);
-        }
-
-        try {
-            is = httpURLConnection.getInputStream();
-            if (is != null) {
-                result = convertInputStreamToString(is);
-            } else {
+            default:
                 result = null;
-            }
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            httpURLConnection.disconnect();
+
         }
+
+
+        /* 결과값 받기 */
+        switch (mode){
+            case MODE_POST:
+                try {
+                    result = httpURLConnection.getResponseMessage();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                break;
+
+            default:
+                try {
+                    is = httpURLConnection.getInputStream();
+                    if (is != null) {
+                        result = convertInputStreamToString(is);
+                    } else {
+                        result = null;
+                    }
+                } catch (IOException ioe) {
+                    ioe.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+
+        }
+        /* 결과값 받기 */
+
+        httpURLConnection.disconnect();     // 서버 연결 해제
         return result;
     }
 
@@ -111,4 +171,5 @@ public class ServerConnection {
         is.close();
         return sb.toString();
     }
+
 }

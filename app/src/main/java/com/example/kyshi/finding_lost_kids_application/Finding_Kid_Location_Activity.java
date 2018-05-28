@@ -31,16 +31,11 @@ import android.widget.Toast;
 
 import com.example.kyshi.finding_lost_kid_application.R;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Timer;
@@ -62,6 +57,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
     private BufferedReader br;
     private String servervalue;
     AsyncTask<String, Void, String> httpGetTask;
+    AsyncTask<String, Void, String> httpDeleteTask;
 
     /* 반복하기 위한 변수 */
     private TimerTask mTask;
@@ -129,6 +125,20 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
          */
 
 
+        /* http Asynctask 선언 */
+
+        httpDeleteTask = new AsyncTask<String, Void, String>() {
+            @Override
+            protected String doInBackground(String... strings) {
+                String result = null;
+                ServerConnection sc = new ServerConnection();
+                result = sc.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_DELETE);
+
+                return result;
+            }
+        };      // 여기까지 반납하는 친구
+
+
         /* 반납 버튼 눌렀을 때 */
         returnbutton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -138,15 +148,28 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                 editor.putBoolean("isconnected", false);
                 editor.commit();
 
-
                 mTimer.cancel();
 
                 if(!httpGetTask.isCancelled()){
                     httpGetTask.cancel(true);
                 }
 
+                httpDeleteTask.execute();
+
+                try {
+                    Toast.makeText(mContext, httpDeleteTask.get(), Toast.LENGTH_LONG);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+
+                if(!httpDeleteTask.isCancelled()){
+                    httpDeleteTask.cancel(true);
+                }
+
                 Intent toMainActivity = new Intent(mContext, MainActivity.class);
-                Toast.makeText(mContext, "반납되었습니다.", Toast.LENGTH_LONG).show();
+                //Toast.makeText(mContext, "반납되었습니다.", Toast.LENGTH_LONG).show();
                 startActivity(toMainActivity);
                 finish();
             }
@@ -298,6 +321,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                     @Override
                     public void run() {
                         /* 서버연결 */
+                        /* http Asynctask 선언 - 이렇게 매번 선언해줘야 execute 오류 안 남*/
                         httpGetTask = new AsyncTask<String, Void, String>() {
 
 
@@ -305,7 +329,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             protected String doInBackground(String... strings) {
                                 String result = null;
                                 ServerConnection sc = new ServerConnection();
-                                result = sc.CONNECTION("users/asdf", null, ANDROID_ID);
+                                result = sc.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_GET);
 
                                 return result;
                             }
@@ -314,8 +338,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             protected void onPostExecute(String result) {
                                 super.onPostExecute(result);
                             }
-                        };
-
+                        };      // 여기까지 지도 정보 받아오는 친구
                         httpGetTask.execute();
 
                         // JSON Parsing

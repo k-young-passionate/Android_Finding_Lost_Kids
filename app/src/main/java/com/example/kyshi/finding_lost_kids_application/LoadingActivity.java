@@ -50,7 +50,6 @@ public class LoadingActivity extends AppCompatActivity {
         HttpGet getrequest = new HttpGet();
         try {
             getrequest.setURI(new URI("swp3.gonetis.com:8888/"));
-
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -58,45 +57,53 @@ public class LoadingActivity extends AppCompatActivity {
         handler = new Handler();
         Runnable r = new Runnable() {
             public void run() {
+                AsyncTask<String, String, Integer> httpGetTask = new AsyncTask<String, String, Integer>() {
 
+                    @Override
+                    protected Integer doInBackground(String... strings) {
+                        ServerConnection sc = new ServerConnection();
+                        Integer result = 0;
+                        String server_result = sc.CONNECTION(null, null, ANDROID_ID, sc.MODE_GET);
+                        if (server_result.contains("Hello World!")) {
+                            result = 0;
+                            sc.CONNECTION("register/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_GET);
+                        } else if (result == null) {
+                            publishProgress();
+                            return -1;
+                        } else {
+                            publishProgress();
+                            return 1;
+                        }
 
-        AsyncTask<String, Void, String> httpGetTask = new AsyncTask<String, Void, String>() {
+                        return result;
+                    }
 
+                    @Override
+                    protected void onPostExecute(Integer result) {
+                        super.onPostExecute(result);
+                    }
 
-            @Override
-            protected String doInBackground(String... strings) {
-                ServerConnection sc = new ServerConnection();
-                String result = sc.CONNECTION(null, null, ANDROID_ID);
-                if(result.contains("Hello World!")){
-                    result = "0";
-                } else if (result == null){
-                    return "-1";
-                } else {
-                    return "1";
-                }
+                    @Override
+                    protected void onProgressUpdate(String... values) {
+                        super.onProgressUpdate(values);
+                        if(values.toString().equals("-1")){
+                            Toast.makeText(mContext, "서버에 연결이 되지 않습니다.", Toast.LENGTH_SHORT);
+                        } else {
+                            Toast.makeText(mContext, "네트워크 상태를 확인해주세요.", Toast.LENGTH_SHORT);
+                        }
+                    }
+                };
 
-                sc.CONNECTION("register/" + ANDROID_ID, null, ANDROID_ID);
-
-                return result;
-            }
-
-            @Override
-            protected void onPostExecute(String result){
-                super.onPostExecute(result);
-            }
-        };
-
-        httpGetTask.execute();
-        /*** 여기서 서버 연결을 확인하고 서버 연결이 되는 환경이면 User_Home_Activity 로 넘겨주자 ***/
-                while(true){
+                httpGetTask.execute();
+                /*** 여기서 서버 연결을 확인하고 서버 연결이 되는 환경이면 User_Home_Activity 로 넘겨주자 ***/
+                while (true) {
 
                     try {
-                        if(!httpGetTask.get().contains("0")){
-                            Toast.makeText(mContext, "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
-                        } else{
+                        if (httpGetTask.get() != 0) {
 
+                        } else {
                             // AsyncTask 종료 안됐으면 종료
-                            if(!httpGetTask.isCancelled())
+                            if (!httpGetTask.isCancelled())
                                 httpGetTask.cancel(true);
 
                             // 현재 사용상태 저장하는 sharedpreference 호출
@@ -105,10 +112,9 @@ public class LoadingActivity extends AppCompatActivity {
                             // 현재 상태 확인하고 사용중이라면 지도 화면으로, 아니면 정보입력화면으로 이동
                             boolean isusing = sp.getBoolean("isconnected", false);
 
-                            if(isusing){
+                            if (isusing) {
                                 intenttocountactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);
                             } else {
-
                                 intenttocountactivity = new Intent(mContext, MainActivity.class);
                             }
                             break;
@@ -122,8 +128,6 @@ public class LoadingActivity extends AppCompatActivity {
 
                 startActivity(intenttocountactivity);
                 finish();
-
-
             }
         };
         handler.postDelayed(r, 1000);
