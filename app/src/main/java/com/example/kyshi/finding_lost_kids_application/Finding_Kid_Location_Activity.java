@@ -44,6 +44,11 @@ import java.util.concurrent.ExecutionException;
 
 import uk.co.senab.photoview.PhotoViewAttacher;
 
+
+
+
+
+
 public class Finding_Kid_Location_Activity extends AppCompatActivity {
     private Context mContext;
     private Intent intenttolostchild;

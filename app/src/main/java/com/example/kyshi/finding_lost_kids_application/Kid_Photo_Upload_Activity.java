@@ -41,6 +41,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private static final int PICK_FROM_ALBUM = 1;
     private static final int CROP_FROM_IMAGE = 2;
     private static final int MY_CAMERA_REQUEST_CODE = 100;
+    private static final int RESULT_KID_PHOTO = 400;
 
     /* 액티비티 관련 변수 */
     private Context mContext = this;
@@ -147,17 +148,14 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                 try {
                     /* 이미지 업로드 */
                     if(kidName.length() != 0) {
-
-                        //Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName, Toast.LENGTH_LONG).show();
-
                         turnoverintent = new Intent();
-                        turnoverintent.putExtra("Name", kidName);
-                        if(photo != null)
+                        turnoverintent.putExtra("Name", kidName.toString());
+                        //Toast.makeText(getApplicationContext(), "아이의 이름: " + kidName.toString(), Toast.LENGTH_LONG).show();
+                        if (photo != null)
                             turnoverintent.putExtra("Photo", photo);
-                        setResult(1, turnoverintent);
+                        setResult(RESULT_KID_PHOTO, turnoverintent);
                         //startActivity(intenttofindinglocationactivity);
                         finish();
-                       aActivity.finish();
                     } else {
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
                     }

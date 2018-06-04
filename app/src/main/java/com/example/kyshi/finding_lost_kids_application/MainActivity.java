@@ -6,17 +6,21 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.SparseBooleanArray;
+import android.view.Menu;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -35,20 +39,13 @@ public class MainActivity extends AppCompatActivity  {
     private Intent Intent_To_Kid_Photo_Upload_Activity = null;
 
     /* Layout 관련 변수 */
-    private ListView mListView;
     private ListView registered_view;
     private Button register_button;
+    private Button delete_button;
     private Button registered_button;
-    private Button exit_button;
-    private Button search_button;
-    private EditText loc_text;
-    private TextView cur_text;
     private ImageButton next;
-
-    /* Listview 관련 변수 */
-    static final ArrayList<String> registered_child = new ArrayList<>();
-    static final ArrayList<String> regi_item = new ArrayList<>();
-    static final ArrayList<String> list = new ArrayList<>();
+    RelativeLayout vislay1;
+    RelativeLayout invislay1;
 
     /* SharedPreference 관련 변수 */
     private SharedPreferences sp;
@@ -60,9 +57,12 @@ public class MainActivity extends AppCompatActivity  {
     /* 지역 변수 및 상수 */
     String cur_delivery;
     DBhelp dbhelp;
-    ArrayList<Kid> kids;
     private String ANDROID_ID;
     private String map_id;
+
+
+    ListView kidListView;
+    KidAdapter kidAdapter = new KidAdapter();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,29 +81,21 @@ public class MainActivity extends AppCompatActivity  {
 
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        /* Listview 구현 */
-        mListView = (ListView) findViewById(R.id.recent_list);
-        //Toast.makeText(getApplicationContext(),"here",Toast.LENGTH_LONG).show();
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, list);
-        mListView.setAdapter(adapter);
-       /* list.add("롯데 월드 잠실점");
-        list.add("고양 킨텍스 전시회장");
-        list.add("이마트 가양점");
-        list.add("홈플러스 잠실점");
-        list.add("롯데 백화점 부산서면점");
-        list.add("현대백화점 목동점");
-*/
+        /* Listview */
+        kidListView = (ListView) findViewById(R.id.kidListView);
+        kidListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        //예시
+        initView(dbhelp);
+        kidListView.setAdapter(kidAdapter);
 
         /* 버튼 등록 */
         register_button = (Button) findViewById(R.id.register);
         registered_button = (Button) findViewById(R.id.registered);
-        exit_button = (Button) findViewById(R.id.exit);
-        search_button = (Button) findViewById(R.id.Search);
         registered_view = (ListView) findViewById(R.id.registered_child_list);
-        loc_text = (EditText)findViewById(R.id.loc_text);
-        cur_text = (TextView)findViewById(R.id.cur_text);
+        delete_button = (Button)findViewById(R.id.delete);
         next = (ImageButton)findViewById(R.id.next);
+        vislay1 = (RelativeLayout) findViewById(R.id.visLay1);
+        invislay1 = (RelativeLayout) findViewById(R.id.invisLayout1);
 
 
         httpPostTask = new AsyncTask<String, Void, String>() {
@@ -112,13 +104,7 @@ public class MainActivity extends AppCompatActivity  {
 
                 ServerConnection sc = new ServerConnection();
 
-                kids = new ArrayList<Kid>();
-                kids.add(new Kid("김", "abcde"));
-                kids.add(new Kid("심", "abcdf"));
-                kids.add(new Kid("안", "abcdg"));
-                kids.add(new Kid("전", "abcdh"));  // 예시 데이터
-
-                String result = sc.CONNECTION("users/"+ ANDROID_ID, kids, ANDROID_ID, sc.MODE_POST);
+                String result = sc.CONNECTION("users/"+ ANDROID_ID, kidAdapter.getKids(), ANDROID_ID, sc.MODE_POST);
 //                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
                 return result;
             }
@@ -169,142 +155,36 @@ public class MainActivity extends AppCompatActivity  {
         });
 
 
-        /* 등록된 아이 정보 보기 및 편집 버튼 */
-        registered_button.setOnClickListener(new Button.OnClickListener() {
-
+        delete_button.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Dialog 생성 Dialog 는 팝업창이라고 생각하면됨
-                final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
-                        MainActivity.this);
-                alertBuilder.setIcon(R.drawable.ic_menu_share); // 아이콘 설정
-                alertBuilder.setTitle("등록된 아이"); // 타이틀 설정
-                ArrayList<String> temp = dbhelp.getResultArray();
-                ArrayList<String>ItemTemp = dbhelp.getItemArray();
-                registered_child.clear();
-
-                for(int i=0; i<temp.size(); i++)
-                {
-                    registered_child.add(temp.get(i));
-                }
-                for(int i=0; i<ItemTemp.size(); i++)
-                {
-                    regi_item.add(ItemTemp.get(i));
-                }
-                final ArrayAdapter<String> registered_adapter = new ArrayAdapter<String>(
-                        MainActivity.this,
-                        android.R.layout.simple_list_item_1, registered_child);
-                alertBuilder.setAdapter(registered_adapter,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,
-                                                int id) {
-
-                            }
-                        });
-
-                //버튼 설정 부분
-                alertBuilder.setNegativeButton("나가기",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        }
-                );
-                alertBuilder.setPositiveButton("편집", new DialogInterface.OnClickListener() {
-                    @Override
-
-                    public void onClick(DialogInterface dialog, int which) {
-                        AlertDialog.Builder innBuilder = new AlertDialog.Builder(
-                                MainActivity.this);
-                        innBuilder.setIcon(R.drawable.ic_menu_share); // 아이콘 설정
-                        innBuilder.setTitle("삭제 할 항목을 선택하세요"); // 타이틀 설정
-
-
-                        String[] child= (String[])registered_child.toArray(new String[registered_child.size()]);
-
-                        final boolean[] checkedItem = new boolean[child.length];
-                        innBuilder.setMultiChoiceItems(child,checkedItem,
-                                new DialogInterface.OnMultiChoiceClickListener() {
-
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                                        Toast.makeText(getBaseContext(),""+checkedItem[which],Toast.LENGTH_SHORT).show();
-                                        if(isChecked)
-                                            checkedItem[which] = true;
-                                    }
-                                });
-                        innBuilder.setNegativeButton("나가기",
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                }
-                        );
-                        innBuilder.setPositiveButton("삭제",
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-
-                                        for(int i=0; i<checkedItem.length; i++)
-                                        {
-                                            if(checkedItem[i] == true)
-                                            {
-                                                Toast.makeText(getBaseContext(),""+checkedItem[i],Toast.LENGTH_SHORT).show();
-                                                Toast.makeText(getBaseContext(),""+regi_item.get(i).toString(),Toast.LENGTH_SHORT).show();
-                                                dbhelp.delete(regi_item.get(i).toString());
-                                            }
-                                            else
-                                                Toast.makeText(getBaseContext(),""+checkedItem[i],Toast.LENGTH_SHORT).show();
-                                        }
-                                        dialog.dismiss();
-                                    }
-                                }
-                        );
-
-                        innBuilder.show();
-                        //adapter setting
-
+                // TODO Auto-generated method stub
+                SparseBooleanArray check = kidListView.getCheckedItemPositions();
+                int count = kidAdapter.getCount();
+                for (int i = count - 1; i >= 0; i--) {
+                    if (check.get(i)) {
+                        Kid kid = (Kid) kidAdapter.getItem(check.keyAt(i));
+                        kidAdapter.removeItem(check.keyAt(i));
+                        dbhelp.delete(kid.getTag_sn());
                     }
-                });
-                alertBuilder.show();
-            }
-        });
-
-
-        /* 어플리케이션 종료 버튼 */
-        exit_button.setOnClickListener(new Button.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                finishAffinity();
-            }
-        });
-
-
-        /* 구글 맵 위치 적고 확인 버튼 */
-        search_button.setOnClickListener(new Button.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                //if(cur_text.getText().length()!= 0) {
-                if(loc_text.getText().length() != 0) {
-                    Intent MAP_INTENT = new Intent(mContext, mapFind.class);
-                    MAP_INTENT.putExtra("String", loc_text.getText().toString());
-                    startActivityForResult(MAP_INTENT, 0);
                 }
-                else {
-                    Toast.makeText(getApplicationContext(),"위치를 입력해주세요", Toast.LENGTH_SHORT).show();
-                }
-                //}
+                kidListView.clearChoices();
+                vislay1.setVisibility(View.VISIBLE);
+                invislay1.setVisibility(View.INVISIBLE);
+                next.setVisibility(View.VISIBLE);
+                kidAdapter.visMode = false;
+                kidAdapter.notifyDataSetChanged();
             }
         });
 
 
     }
 
-
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
 
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -319,28 +199,58 @@ public class MainActivity extends AppCompatActivity  {
                 //날짜 출력 포맷 설정
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일");
                 String dateResult = simpleDateFormat.format(date);
-                String name = data.getStringExtra("String");
-                String tag = data.getStringExtra("tag");
-                dbhelp.insert(dateResult,name,tag);
+                String name = data.getStringExtra("Name");
+                String tag = data.getStringExtra("Tag");
+                dbhelp.insert(dateResult, name, tag);
+                /*
                 String result = dbhelp.getResult();
-                Toast.makeText(getApplicationContext(),result,Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();*/
+                Bitmap photo = (Bitmap) data.getParcelableExtra("Photo");
+                Kid kid = new Kid(name, tag, photo);
+                kidAdapter.addItem(kid);
+                kidAdapter.notifyDataSetChanged();
                 break;
             case 2:
                 Toast.makeText(getApplicationContext(),"정상적으로 값을 받았습니다.",Toast.LENGTH_SHORT).show();
-                cur_text.setText(data.getStringExtra("loc_name"));
                 cur_delivery = data.getStringExtra("loc_name");
                 Toast.makeText(getApplicationContext(),cur_delivery,Toast.LENGTH_SHORT).show();
                 break;
             case 3:
-                Toast.makeText(getApplicationContext(),data.getStringExtra("String"),Toast.LENGTH_SHORT).show();
-                String cur_delivered = data.getStringExtra("String");
-                cur_text.setText(cur_delivered);
-
+                Toast.makeText(getApplicationContext(),data.getStringExtra("Name"),Toast.LENGTH_SHORT).show();
+                String cur_delivered = data.getStringExtra("Name");
             default:
 
                 break;
 
         }
+    }
+
+    public void initView(DBhelp dbhelp) {
+        ArrayList<String> names = dbhelp.getItemArray();
+        ArrayList<String> tags = dbhelp.getTagArray();
+        int count = names.size();
+        for (int i = 0; i < count; i++) {
+            Kid kid = new Kid(names.get(i), tags.get(i));
+            kidAdapter.addItem(kid);
+        }
+        kidAdapter.notifyDataSetChanged();
+    }
+
+    public void onEditButtonClicked(View v) {
+        vislay1.setVisibility(View.INVISIBLE);
+        invislay1.setVisibility(View.VISIBLE);
+        next.setVisibility(View.INVISIBLE);
+        kidAdapter.visMode = true;
+        kidListView.clearChoices();
+        kidAdapter.notifyDataSetChanged();
+    }
+
+    public void onEscButtonClicked(View v) {
+        vislay1.setVisibility(View.VISIBLE);
+        invislay1.setVisibility(View.INVISIBLE);
+        next.setVisibility(View.VISIBLE);
+        kidAdapter.visMode = false;
+        kidAdapter.notifyDataSetChanged();
     }
 }
 
