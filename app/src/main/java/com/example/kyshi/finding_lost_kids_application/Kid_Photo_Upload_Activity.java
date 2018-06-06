@@ -15,6 +15,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.content.FileProvider;
@@ -87,7 +88,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.kid_photo_upload);
 
-        ANDROID_ID = ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
+        ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         // 넘길 Intent -> 새로운 구현으로 비활성화
         // intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
 
@@ -127,6 +128,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
                 ServerConnection sc = new ServerConnection();
                 String result = sc.CONNECTION("users/" + ANDROID_ID, kid, ANDROID_ID, sc.MODE_POST);
+                String result2 = sc.CONNECTION("photo/" + kid.getTag_sn(), kid, ANDROID_ID, sc.MODE_PHOTO);
                 return result;
             }
         };
@@ -193,6 +195,16 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                         setResult(RESULT_KID_PHOTO, turnoverintent);
                         //startActivity(intenttofindinglocationactivity);
                         finish();
+                        Handler handler = new Handler();
+                        Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!httpPostTask.isCancelled()){
+                                    httpPostTask.cancel(true);
+                                }
+                            }
+                        };
+                        handler.postDelayed(r, 3000);
                     } else if(kidName.length() == 0){
                         Toast.makeText(getApplicationContext(), "아이의 이름을 적어주세요.", Toast.LENGTH_LONG).show();
                     } else {

@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity  {
 
     /* 서버 관련 Asynctask */
     AsyncTask<String, Void, String> httpPostTask;
+    AsyncTask<String, Void, String> httpDeleteTask;
 
     /* 지역 변수 및 상수 */
     String cur_delivery;
@@ -69,6 +70,9 @@ public class MainActivity extends AppCompatActivity  {
 
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
 
+        // 현재 사용상태 저장하는 sharedpreference 호출
+        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
+
         /* Listview */
         kidListView = (ListView) findViewById(R.id.kidListView);
         kidListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -86,6 +90,14 @@ public class MainActivity extends AppCompatActivity  {
         vislay1 = (RelativeLayout) findViewById(R.id.visLay1);
         invislay1 = (RelativeLayout) findViewById(R.id.invisLayout1);
 
+        /* 반납했으면 아이 정보 삭제 */
+        if(!sp.getBoolean("isdeleted", false)){
+            dbhelp.deleteAll();
+            kidAdapter.removeAll();
+            editor = sp.edit();
+            editor.putBoolean("isdeleted", true);
+            editor.commit();
+        }
 
         httpPostTask = new AsyncTask<String, Void, String>() {
             @Override
@@ -101,37 +113,40 @@ public class MainActivity extends AppCompatActivity  {
         };
 
 
+
+
         /* findind_kid_location 액티비티로 넘기는 버튼 */
         next.setOnClickListener(new ImageButton.OnClickListener(){
                                     @Override
                                     public void onClick(View v) {
 
-                                        httpPostTask.execute();
-                                        try {
-                                            Toast.makeText(getApplicationContext(), ""+ httpPostTask.get() , Toast.LENGTH_LONG).show();
-                                        } catch (InterruptedException e) {
-                                            e.printStackTrace();
-                                        } catch (ExecutionException e) {
-                                            e.printStackTrace();
+                                        if(dbhelp.findnum() == 0){
+                                            Toast.makeText(mContext, "아이를 등록해주세요.", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            httpPostTask.execute();
+                                            try {
+                                                Toast.makeText(getApplicationContext(), "" + httpPostTask.get(), Toast.LENGTH_LONG).show();
+                                            } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                            } catch (ExecutionException e) {
+                                                e.printStackTrace();
+                                            }
+
+                                            if (!httpPostTask.isCancelled()) {
+                                                httpPostTask.cancel(true);
+                                            }
+
+                                            // 현재 사용상태 사용으로 변경 후 commit
+                                            editor = sp.edit();
+                                            editor.putBoolean("isconnected", true);
+                                            editor.commit();
+
+                                            Intent_To_Finding_Kid_Location = new Intent(mContext, Finding_Kid_Location_Activity.class);
+                                            Intent_To_Finding_Kid_Location.putExtra("String", cur_delivery);
+                                            Toast.makeText(getApplicationContext(), "cur: " + cur_delivery, Toast.LENGTH_LONG);
+                                            startActivityForResult(Intent_To_Finding_Kid_Location, 0);
+                                            //finish();
                                         }
-
-                                        if(!httpPostTask.isCancelled()){
-                                            httpPostTask.cancel(true);
-                                        }
-
-                                        // 현재 사용상태 저장하는 sharedpreference 호출
-                                        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
-
-                                        // 현재 사용상태 사용으로 변경 후 commit
-                                        editor = sp.edit();
-                                        editor.putBoolean("isconnected", true);
-                                        editor.commit();
-
-                                        Intent_To_Finding_Kid_Location = new Intent(mContext,Finding_Kid_Location_Activity.class);
-                                        Intent_To_Finding_Kid_Location.putExtra("String",cur_delivery);
-                                        Toast.makeText(getApplicationContext(),"cur: "+ cur_delivery,Toast.LENGTH_LONG);
-                                        startActivityForResult(Intent_To_Finding_Kid_Location,0);
-                                        //finish();
                                     }
                                 });
 
@@ -155,7 +170,18 @@ public class MainActivity extends AppCompatActivity  {
                 int count = kidAdapter.getCount();
                 for (int i = count - 1; i >= 0; i--) {
                     if (check.get(i)) {
+                        httpDeleteTask = new AsyncTask<String, Void, String>() {
+                            @Override
+                            protected String doInBackground(String... strings) {
+                                String result = null;
+                                ServerConnection sc = new ServerConnection();
+                                result = sc.CONNECTION("users/" + ANDROID_ID + "/" + strings[0], null, ANDROID_ID, sc.MODE_DELETE);
+
+                                return result;
+                            }
+                        };
                         Kid kid = (Kid) kidAdapter.getItem(check.keyAt(i));
+                        httpDeleteTask.execute(kid.getTag_sn());
                         kidAdapter.removeItem(check.keyAt(i));
                         dbhelp.delete(kid.getTag_sn());
                     }
@@ -182,6 +208,14 @@ public class MainActivity extends AppCompatActivity  {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         super.onActivityResult(requestCode, resultCode, data);
+
+        try {
+            if (!httpDeleteTask.isCancelled()) {
+                httpDeleteTask.cancel(true);
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        }
 
         switch (resultCode) {
             // 정상 작동
@@ -227,6 +261,7 @@ public class MainActivity extends AppCompatActivity  {
         }
         kidAdapter.notifyDataSetChanged();
     }
+
 
     public void onEditButtonClicked(View v) {
         vislay1.setVisibility(View.INVISIBLE);

@@ -43,6 +43,19 @@ public class DBhelp extends SQLiteOpenHelper {
         db.close();
     }
 
+    public int findnum() {
+        SQLiteDatabase db = getReadableDatabase();
+        int result = 0;
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM CHILD;", null);
+        while(cursor.moveToNext()){
+            result += cursor.getInt(0);
+        }
+        db.close();
+
+        return result;
+    }
+
+
     public void update(String name, String tag) {
         SQLiteDatabase db = getWritableDatabase();
 
@@ -70,6 +83,13 @@ public class DBhelp extends SQLiteOpenHelper {
         SQLiteDatabase db = getWritableDatabase();
         // 입력한 항목과 일치하는 행 삭제
         db.execSQL("DELETE FROM CHILD WHERE TAG='" + tag + "';");
+        db.close();
+    }
+
+    public void deleteAll() {
+        SQLiteDatabase db = getWritableDatabase();
+        // 입력한 항목과 일치하는 행 삭제
+        db.execSQL("DELETE FROM CHILD WHERE TAG IS NOT NULL;");
         db.close();
     }
 
