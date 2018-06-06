@@ -324,14 +324,13 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                         /* 서버연결 */
                         /* http Asynctask 선언 - 이렇게 매번 선언해줘야 execute 오류 안 남*/
                         httpGetTask = new AsyncTask<String, Void, String>() {
-
-
                             @Override
                             protected String doInBackground(String... strings) {
                                 String result = null;
                                 ServerConnection sc = new ServerConnection();
                                 result = sc.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_GET);
-
+//                                result.
+//                                sc.CONNECTION("mas/" + )
                                 return result;
                             }
 

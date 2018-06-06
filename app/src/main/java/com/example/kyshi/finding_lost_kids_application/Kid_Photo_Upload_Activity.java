@@ -4,16 +4,19 @@ import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -64,12 +67,16 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private Bitmap photo;
     private Uri mImageCaptureUri;
     private String absolutePath;
-
+    private String filePath;
 
     /* http 통신 관련 변수 */
-    AsyncTask<String, Void, String> httpPostTask;
+    AsyncTask<Kid, Void, String> httpPostTask;
     private String ANDROID_ID;
     Kid kid;
+
+    /* 기타 변수 */
+    SharedPreferences sp;
+    String tag = null;
 
     /* SharedPreference 관련 변수 */    // 앱 뷰 변동으로 필요 X
 //    private SharedPreferences sp;
@@ -80,6 +87,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.kid_photo_upload);
 
+        ANDROID_ID = ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         // 넘길 Intent -> 새로운 구현으로 비활성화
         // intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
 
@@ -113,12 +121,11 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
         kid = new Kid();
 
-        httpPostTask = new AsyncTask<String, Void, String>() {
+        httpPostTask = new AsyncTask<Kid, Void, String>() {
             @Override
-            protected String doInBackground(String... strings) {
+            protected String doInBackground(Kid... kids) {
 
                 ServerConnection sc = new ServerConnection();
-
                 String result = sc.CONNECTION("users/" + ANDROID_ID, kid, ANDROID_ID, sc.MODE_POST);
                 return result;
             }
@@ -170,6 +177,16 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                 try {
                     /* 이미지 업로드 */
                     if (kidName.length() != 0 && photo != null) {
+                        /* 이미지 업로드 및 전처리 */
+                        kid = new Kid();
+                        sp = getSharedPreferences("sp", MODE_PRIVATE);
+                        kid.setTag_sn(sp.getString("tag_sn", null));
+                        kid.setName(kidName.toString());
+                        kid.setPic_addr(filePath);
+                        httpPostTask.execute(kid);
+
+                        /* 이미지 업로드 및 전처리 */
+
                         turnoverintent = new Intent();
                         turnoverintent.putExtra("Name", kidName.toString());
                         turnoverintent.putExtra("Photo", photo);
@@ -286,7 +303,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                String filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Finding_Kid_Location/Crop_my_kid_" + System.currentTimeMillis() + ".jpg";
+                filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Finding_Kid_Location/Crop_my_kid_" + System.currentTimeMillis() + ".jpg";
                 photo = null;
 
                 if (extras != null) {

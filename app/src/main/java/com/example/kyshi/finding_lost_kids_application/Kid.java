@@ -12,6 +12,7 @@ public class Kid {
     private String location;
     private int x;
     private int y;
+    private String pic_addr;
 
     public Kid(String name, String tag_sn) {
         this.name = name;
@@ -97,5 +98,13 @@ public class Kid {
 
     public void setY(int y) {
         this.y = y;
+    }
+
+    public String getPic_addr() {
+        return pic_addr;
+    }
+
+    public void setPic_addr(String pic_addr) {
+        this.pic_addr = pic_addr;
     }
 }

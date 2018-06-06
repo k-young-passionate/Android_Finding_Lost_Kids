@@ -2,10 +2,12 @@ package com.example.kyshi.finding_lost_kids_application;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -19,6 +21,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public class User_Home_Activity extends AppCompatActivity {
     private final static int REQUEST_CODE_KID_PHOTO = 400;
@@ -41,6 +45,10 @@ public class User_Home_Activity extends AppCompatActivity {
     AsyncTask<String, Void, String> httpPostTask;
     private String ANDROID_ID;
     Kid kid;
+
+    // SharedPreference
+    SharedPreferences sp;
+    SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +107,10 @@ public class User_Home_Activity extends AppCompatActivity {
                     if (tag_sn.length() != 0) {
 
                         kid.setTag_sn(tag_sn);
-
+                        sp = getSharedPreferences("sp", MODE_PRIVATE);
+                        editor = sp.edit();
+                        editor.putString("tag_sn", tag_sn);
+                        editor.commit();
                         //httpPostTask.execute(tag_sn);
                         startActivityForResult(intenttokidphotouploadactivity, REQUEST_CODE_KID_PHOTO);
                     } else {

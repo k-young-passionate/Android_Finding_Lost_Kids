@@ -1,6 +1,7 @@
 package com.example.kyshi.finding_lost_kids_application;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import org.apache.http.util.ByteArrayBuffer;
 import org.json.JSONArray;
@@ -8,6 +9,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,6 +25,7 @@ public class ServerConnection {
     public final static int MODE_GET = 0;
     public final static int MODE_POST = 1;
     public final static int MODE_DELETE = 2;
+    private final static String attachmentName = "Photo";
 
     /* 서버연결 관련 변수 */
     private static String url;
@@ -48,6 +51,8 @@ public class ServerConnection {
             e.printStackTrace();
             return null;
         }
+
+        Log.e("!!!!!!!!!!!!!!!!!!!!","url: " + url + addurl);
         /* url 값으로 서버에 연결 */
 
         String json = "";
@@ -68,17 +73,18 @@ public class ServerConnection {
                 if (url.contains("users")) {
                     try {
                         /* 보낼 객체 JSON 화 */
-
+/*
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
                         kid.getPhoto().compress(Bitmap.CompressFormat.JPEG, 100, bos);
                         byte[] bab = bos.toByteArray();
-
+*/
                         JSONObject jsonObject = new JSONObject();
                         jsonObject.accumulate("name", kid.getName());
                         jsonObject.accumulate("tag", kid.getTag_sn());
-                        jsonObject.accumulate("pic", bab);
 
+
+                        Log.e("!!!!!!!!!!!!!!!!!!!!","kid: " + kid.getName() + kid.getTag_sn());
 
                         json = jsonObject.toString();
                         /* 보낼 객체 JSON 화 */
@@ -89,6 +95,15 @@ public class ServerConnection {
                         httpURLConnection.setDoOutput(true);
                         httpURLConnection.setDoInput(true);
                         /* http 소켓 만들기 */
+
+                        /* DOS로 사진 처리 */
+                        DataOutputStream dos = new DataOutputStream(httpURLConnection.getOutputStream());
+                        dos.writeBytes("--*****\r\n");
+                        dos.writeBytes("Content-Disposition: form-data; name=\""+attachmentName+"\";filename=\"" + kid.getPic_addr()+"\"\r\n");
+                        dos.writeBytes("\r\n");
+                        /* DOS로 사진 처리 */
+
+                        //////////////////////////////////// 위랑아래가 동시에 될지 의문
 
                         /* 서버에 보내기 */
                         OutputStream os = httpURLConnection.getOutputStream();
