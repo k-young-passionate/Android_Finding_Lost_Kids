@@ -27,7 +27,9 @@
             android:text="Name"
             android:textColor="#ffffff"
             android:textSize="30dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"/>
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -42,7 +44,9 @@
                 android:layout_centerVertical="true"
                 android:text="Tag"
                 android:textColor="#fcff4d"
-                android:textSize="20dp" />
+                android:textSize="20dp"
+                android:maxLines="1"
+                android:ellipsize="end"/>
 
         </RelativeLayout>
     </LinearLayout>

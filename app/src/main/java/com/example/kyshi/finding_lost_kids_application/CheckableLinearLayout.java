@@ -3,8 +3,8 @@ package com.example.kyshi.finding_lost_kids_application;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.CheckBox;
-import android.widget.LinearLayout;
 import android.widget.Checkable;
+import android.widget.LinearLayout;
 
 import com.example.kyshi.finding_lost_kid_application.R;
 

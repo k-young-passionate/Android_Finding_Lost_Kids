@@ -30,8 +30,13 @@ public class KidAdapter extends BaseAdapter {
         kids.add(item);
     }
 
-    public void removeItem(int i){
+    public void removeItem(int i) {
         kids.remove(i);
+    }
+
+    public void removeAll() {
+        for (int i = 0; i < kids.size(); i++)
+            kids.remove(i);
     }
 
     @Override
@@ -44,16 +49,17 @@ public class KidAdapter extends BaseAdapter {
         return position;
     }
 
-    public  ArrayList<Kid> getKids(){
+    public ArrayList<Kid> getKids() {
         return kids;
     }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Context context = parent.getContext();
 
-        if(convertView==null){
-            LayoutInflater inflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.kid,parent,false);
+        if (convertView == null) {
+            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            convertView = inflater.inflate(R.layout.kid, parent, false);
         }
 
         TextView textView = (TextView) convertView.findViewById(R.id.textView);
@@ -70,8 +76,7 @@ public class KidAdapter extends BaseAdapter {
 
         if (visMode) {
             checkBox.setVisibility(View.VISIBLE);
-        }
-        else {
+        } else {
             checkBox.setVisibility(View.GONE);
         }
 

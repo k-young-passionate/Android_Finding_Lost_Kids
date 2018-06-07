@@ -1,31 +1,31 @@
 package com.example.kyshi.finding_lost_kids_application;
 
-import android.app.AlertDialog;
+import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.v4.graphics.BitmapCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.kyshi.finding_lost_kid_application.R;
 
+import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity  {
 
     /* 서버 관련 Asynctask */
     AsyncTask<String, Void, String> httpPostTask;
+    AsyncTask<String, Void, String> httpDeleteTask;
 
     /* 지역 변수 및 상수 */
     String cur_delivery;
@@ -68,22 +69,20 @@ public class MainActivity extends AppCompatActivity  {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Context mainContext = this;
-        dbhelp = new DBhelp(getApplicationContext(),"CHILD3.db",null,1);
+        dbhelp = new DBhelp(getApplicationContext(),"CHILD3.db",null,2);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        //SlidingView sv = new SlidingView(this, a);
-        //Toast.makeText(getApplicationContext(),""+cur_temp,Toast.LENGTH_LONG).show();
-        //View v1 = View.inflate(this, R.layout.activity_loading, null);
-        //View v2 = View.inflate(this, R.layout.finding_kid_location, null);
-        //sv.addView(v1);
-        //sv.addView(v2);
-        //setContentView(sv);
+
         setContentView(R.layout.activity_main);
 
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
 
+        // 현재 사용상태 저장하는 sharedpreference 호출
+        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
+
         /* Listview */
         kidListView = (ListView) findViewById(R.id.kidListView);
         kidListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
         //예시
         initView(dbhelp);
         kidListView.setAdapter(kidAdapter);
@@ -97,6 +96,14 @@ public class MainActivity extends AppCompatActivity  {
         vislay1 = (RelativeLayout) findViewById(R.id.visLay1);
         invislay1 = (RelativeLayout) findViewById(R.id.invisLayout1);
 
+        /* 반납했으면 아이 정보 삭제 */
+        if(!sp.getBoolean("isdeleted", false)){
+            dbhelp.deleteAll();
+            kidAdapter.removeAll();
+            editor = sp.edit();
+            editor.putBoolean("isdeleted", true);
+            editor.commit();
+        }
 
         httpPostTask = new AsyncTask<String, Void, String>() {
             @Override
@@ -104,11 +111,14 @@ public class MainActivity extends AppCompatActivity  {
 
                 ServerConnection sc = new ServerConnection();
 
-                String result = sc.CONNECTION("users/"+ ANDROID_ID, kidAdapter.getKids(), ANDROID_ID, sc.MODE_POST);
+//                String result = sc.CONNECTION("users/"+ ANDROID_ID, kidAdapter.getKids(), ANDROID_ID, sc.MODE_POST);
 //                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
-                return result;
+//                return result;
+                return null;
             }
         };
+
+
 
 
         /* findind_kid_location 액티비티로 넘기는 버튼 */
@@ -116,34 +126,37 @@ public class MainActivity extends AppCompatActivity  {
                                     @Override
                                     public void onClick(View v) {
 
-                                        httpPostTask.execute();
-                                        try {
-                                            Toast.makeText(getApplicationContext(), ""+ httpPostTask.get() , Toast.LENGTH_LONG).show();
-                                        } catch (InterruptedException e) {
-                                            e.printStackTrace();
-                                        } catch (ExecutionException e) {
-                                            e.printStackTrace();
+                                        if(dbhelp.findnum() == 0){
+                                            Toast.makeText(mContext, "아이를 등록해주세요.", Toast.LENGTH_LONG).show();
+                                        } else {
+                                            httpPostTask.execute();
+                                            try {
+                                                Toast.makeText(getApplicationContext(), "" + httpPostTask.get(), Toast.LENGTH_LONG).show();
+                                            } catch (InterruptedException e) {
+                                                e.printStackTrace();
+                                            } catch (ExecutionException e) {
+                                                e.printStackTrace();
+                                            }
+
+                                            if (!httpPostTask.isCancelled()) {
+                                                httpPostTask.cancel(true);
+                                            }
+
+                                            // 현재 사용상태 사용으로 변경 후 commit
+                                            editor = sp.edit();
+                                            editor.putBoolean("isconnected", true);
+                                            editor.commit();
+
+                                            Intent_To_Finding_Kid_Location = new Intent(mContext, Finding_Kid_Location_Activity.class);
+                                            Intent_To_Finding_Kid_Location.putExtra("String", cur_delivery);
+                                            Toast.makeText(getApplicationContext(), "cur: " + cur_delivery, Toast.LENGTH_LONG);
+                                            startActivityForResult(Intent_To_Finding_Kid_Location, 0);
+                                            //finish();
                                         }
-
-                                        if(!httpPostTask.isCancelled()){
-                                            httpPostTask.cancel(true);
-                                        }
-
-                                        // 현재 사용상태 저장하는 sharedpreference 호출
-                                        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
-
-                                        // 현재 사용상태 사용으로 변경 후 commit
-                                        editor = sp.edit();
-                                        editor.putBoolean("isconnected", true);
-                                        editor.commit();
-
-                                        Intent_To_Finding_Kid_Location = new Intent(mContext,Finding_Kid_Location_Activity.class);
-                                        Intent_To_Finding_Kid_Location.putExtra("String",cur_delivery);
-                                        Toast.makeText(getApplicationContext(),"cur: "+ cur_delivery,Toast.LENGTH_LONG);
-                                        startActivityForResult(Intent_To_Finding_Kid_Location,0);
-                                        finish();
                                     }
                                 });
+
+
         register_button.setOnClickListener(new Button.OnClickListener() {
 
             @Override
@@ -163,7 +176,18 @@ public class MainActivity extends AppCompatActivity  {
                 int count = kidAdapter.getCount();
                 for (int i = count - 1; i >= 0; i--) {
                     if (check.get(i)) {
+                        httpDeleteTask = new AsyncTask<String, Void, String>() {
+                            @Override
+                            protected String doInBackground(String... strings) {
+                                String result = null;
+                                ServerConnection sc = new ServerConnection();
+                                result = sc.CONNECTION("users/" + ANDROID_ID + "/" + strings[0], null, ANDROID_ID, sc.MODE_DELETE);
+
+                                return result;
+                            }
+                        };
                         Kid kid = (Kid) kidAdapter.getItem(check.keyAt(i));
+                        httpDeleteTask.execute(kid.getTag_sn());
                         kidAdapter.removeItem(check.keyAt(i));
                         dbhelp.delete(kid.getTag_sn());
                     }
@@ -191,6 +215,14 @@ public class MainActivity extends AppCompatActivity  {
 
         super.onActivityResult(requestCode, resultCode, data);
 
+        try {
+            if (!httpDeleteTask.isCancelled()) {
+                httpDeleteTask.cancel(true);
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
         switch (resultCode) {
             // 정상 작동
             case 1:
@@ -201,11 +233,13 @@ public class MainActivity extends AppCompatActivity  {
                 String dateResult = simpleDateFormat.format(date);
                 String name = data.getStringExtra("Name");
                 String tag = data.getStringExtra("Tag");
-                dbhelp.insert(dateResult, name, tag);
+                Bitmap photo = (Bitmap) data.getParcelableExtra("Photo");
+                byte[] photo_byte = getByteArrayFromBitmap(photo);
+
+                dbhelp.insert(dateResult, name, tag, photo_byte);
                 /*
                 String result = dbhelp.getResult();
                 Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();*/
-                Bitmap photo = (Bitmap) data.getParcelableExtra("Photo");
                 Kid kid = new Kid(name, tag, photo);
                 kidAdapter.addItem(kid);
                 kidAdapter.notifyDataSetChanged();
@@ -219,22 +253,24 @@ public class MainActivity extends AppCompatActivity  {
                 Toast.makeText(getApplicationContext(),data.getStringExtra("Name"),Toast.LENGTH_SHORT).show();
                 String cur_delivered = data.getStringExtra("Name");
             default:
-
                 break;
 
         }
     }
 
     public void initView(DBhelp dbhelp) {
-        ArrayList<String> names = dbhelp.getItemArray();
+        ArrayList<String> names = dbhelp.getNameArray();
         ArrayList<String> tags = dbhelp.getTagArray();
+        ArrayList<byte[]> photos = dbhelp.getPhotoArray();
+
         int count = names.size();
         for (int i = 0; i < count; i++) {
-            Kid kid = new Kid(names.get(i), tags.get(i));
+            Kid kid = new Kid(names.get(i), tags.get(i),getBitmapFromByteArray(photos.get(i)));
             kidAdapter.addItem(kid);
         }
         kidAdapter.notifyDataSetChanged();
     }
+
 
     public void onEditButtonClicked(View v) {
         vislay1.setVisibility(View.INVISIBLE);
@@ -251,6 +287,37 @@ public class MainActivity extends AppCompatActivity  {
         next.setVisibility(View.VISIBLE);
         kidAdapter.visMode = false;
         kidAdapter.notifyDataSetChanged();
+    }
+    public byte[] getByteArrayFromDrawable(Drawable photo)
+    {
+        if(photo==null)
+            return null;
+        Bitmap bitmap =((BitmapDrawable)photo).getBitmap();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG,100,stream);
+        byte[] data = stream.toByteArray();
+
+        return data;
+    }
+
+    public byte[] getByteArrayFromBitmap(Bitmap photo)
+    {
+        if(photo==null)
+            return null;
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        photo.compress(Bitmap.CompressFormat.PNG,100,stream);
+        byte[] data = stream.toByteArray();
+
+        return data;
+    }
+    public Bitmap getBitmapFromByteArray(byte [] bytes){
+        try {
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
 }
 

@@ -2,11 +2,14 @@ package com.example.kyshi.finding_lost_kids_application;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -16,6 +19,10 @@ import com.example.kyshi.finding_lost_kid_application.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public class User_Home_Activity extends AppCompatActivity {
     private final static int REQUEST_CODE_KID_PHOTO = 400;
@@ -34,6 +41,15 @@ public class User_Home_Activity extends AppCompatActivity {
     //  일반 지역 변수
     private String tag_sn;
 
+    // http 통신 관련 변수
+    AsyncTask<String, Void, String> httpPostTask;
+    private String ANDROID_ID;
+    Kid kid;
+
+    // SharedPreference
+    SharedPreferences sp;
+    SharedPreferences.Editor editor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +65,21 @@ public class User_Home_Activity extends AppCompatActivity {
         cl.setBackgroundColor(Color.WHITE);
 
         intenttokidphotouploadactivity = new Intent(mContext, Kid_Photo_Upload_Activity.class);     // 다음 Activity 로 넘어가기 위한 intent 설정
+
+        kid = new Kid();
+        ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        httpPostTask = new AsyncTask<String, Void, String>() {
+            @Override
+            protected String doInBackground(String... strings) {
+
+                ServerConnection sc = new ServerConnection();
+
+                String result = sc.CONNECTION("users/"+ ANDROID_ID, kid, ANDROID_ID, sc.MODE_POST);
+//                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
+                return result;
+            }
+        };
 
         /**
          * Layout view 들과 연동
@@ -74,8 +105,13 @@ public class User_Home_Activity extends AppCompatActivity {
 
 
                     if (tag_sn.length() != 0) {
-                        //startActivity(intenttokidphotouploadactivity);    // UI 변경으로 비활성화
-                        Toast.makeText(getApplicationContext(), "태그 코드: " + tag_sn, Toast.LENGTH_LONG).show();
+
+                        kid.setTag_sn(tag_sn);
+                        sp = getSharedPreferences("sp", MODE_PRIVATE);
+                        editor = sp.edit();
+                        editor.putString("tag_sn", tag_sn);
+                        editor.commit();
+                        //httpPostTask.execute(tag_sn);
                         startActivityForResult(intenttokidphotouploadactivity, REQUEST_CODE_KID_PHOTO);
                     } else {
                         Toast.makeText(getApplicationContext(), "태그 코드를 확인해주세요.", Toast.LENGTH_LONG).show();
@@ -89,28 +125,11 @@ public class User_Home_Activity extends AppCompatActivity {
         });
     }
 
-    private void sendObject(int num) {
-        JSONObject jo = new JSONObject();
-        try {
-            jo.put("tag_sn", num);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void receiveObject(JSONObject data) {
-        try {
-            data.getInt("err");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode==REQUEST_CODE_KID_PHOTO){
-            data.putExtra("Tag",tag_sn);
+        if(requestCode==REQUEST_CODE_KID_PHOTO&&resultCode==RESULT_OK){
+            data.putExtra("Tag", tag_sn);
             setResult(1,data);
             finish();
         }
