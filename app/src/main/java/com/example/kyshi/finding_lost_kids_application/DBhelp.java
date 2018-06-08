@@ -29,15 +29,16 @@ public class DBhelp extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         switch (oldVersion) {
             case 1:
-                try{
+                try {
                     db.beginTransaction();
                     db.execSQL("ALTER TABLE CHILD ADD COLUMN photo BLOB default NULL");
                     db.setTransactionSuccessful();
-                } catch(Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
-                }finally {
+                } finally {
                     db.endTransaction();
-                };
+                }
+                ;
                 break;
         }
 
@@ -48,26 +49,26 @@ public class DBhelp extends SQLiteOpenHelper {
         super.onOpen(db);
     }
 
-/*
+    /*
+        public void insert(String create_at, String name, String tag, byte[] photo) {
+            // 읽고 쓰기가 가능하게 DB 열기
+            SQLiteDatabase db = getWritableDatabase();
+            // DB에 입력한 값으로 행 추가
+            db.execSQL("INSERT INTO CHILD VALUES('" +
+                    name + "', '" +
+                    tag + "', '" +
+                    create_at + "','" +
+                    photo +");");
+            db.close();
+        }
+        */
     public void insert(String create_at, String name, String tag, byte[] photo) {
-        // 읽고 쓰기가 가능하게 DB 열기
-        SQLiteDatabase db = getWritableDatabase();
-        // DB에 입력한 값으로 행 추가
-        db.execSQL("INSERT INTO CHILD VALUES('" +
-                name + "', '" +
-                tag + "', '" +
-                create_at + "','" +
-                photo +");");
-        db.close();
-    }
-    */
-    public void insert(String create_at, String name, String tag, byte[] photo){
         SQLiteDatabase db = getWritableDatabase();
         SQLiteStatement p = db.compileStatement("INSERT INTO CHILD VALUES(?,?,?,?);");
-        p.bindString(1,name);
-        p.bindString(2,tag);
-        p.bindString(3,create_at);
-        p.bindBlob(4,photo);
+        p.bindString(1, name);
+        p.bindString(2, tag);
+        p.bindString(3, create_at);
+        p.bindBlob(4, photo);
         p.execute();
     }
 
@@ -75,7 +76,7 @@ public class DBhelp extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
         int result = 0;
         Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM CHILD;", null);
-        while(cursor.moveToNext()){
+        while (cursor.moveToNext()) {
             result += cursor.getInt(0);
         }
         db.close();
@@ -91,7 +92,7 @@ public class DBhelp extends SQLiteOpenHelper {
         db.close();
     }
 
-    public boolean search(String tag    ) {
+    public boolean search(String tag) {
         SQLiteDatabase db = getReadableDatabase();
         String result;
         result = "";
@@ -152,6 +153,7 @@ public class DBhelp extends SQLiteOpenHelper {
 
         return child_List;
     }
+
     public ArrayList<String> getTagArray() {
         SQLiteDatabase db = getReadableDatabase();
         ArrayList<String> child_List = new ArrayList<>();
@@ -167,6 +169,7 @@ public class DBhelp extends SQLiteOpenHelper {
 
         return child_List;
     }
+
     public ArrayList<byte[]> getPhotoArray() {
         SQLiteDatabase db = getReadableDatabase();
         ArrayList<byte[]> photo_list = new ArrayList<>();
@@ -196,6 +199,14 @@ public class DBhelp extends SQLiteOpenHelper {
         }
 
         return result;
+    }
+
+    public byte[] getPhotoFromTag(String tag) {
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT photo FROM CHILD WHERE tag = '" + tag + "';", null);
+        cursor.moveToNext();
+        return cursor.getBlob(0);
     }
 }
 
