@@ -235,12 +235,17 @@ public class MainActivity extends AppCompatActivity  {
                 String tag = data.getStringExtra("Tag");
                 Bitmap photo = (Bitmap) data.getParcelableExtra("Photo");
                 byte[] photo_byte = getByteArrayFromBitmap(photo);
-
+                /*test
+                Drawable d = getResources().getDrawable(R.drawable.child1,null);
+                photo_byte = getByteArrayFromDrawable(d);
+                photo = getBitmapFromByteArray(photo_byte);
+                */
                 dbhelp.insert(dateResult, name, tag, photo_byte);
                 /*
                 String result = dbhelp.getResult();
                 Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();*/
                 Kid kid = new Kid(name, tag, photo);
+
                 kidAdapter.addItem(kid);
                 kidAdapter.notifyDataSetChanged();
                 break;
