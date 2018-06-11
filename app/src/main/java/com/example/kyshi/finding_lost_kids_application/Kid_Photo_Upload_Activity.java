@@ -47,7 +47,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     /* 액티비티 관련 변수 */
     private Context mContext = this;
     private Intent turnoverintent;
-    Tag_Update_Activity aActivity;
+    Tag_Check_Activity aActivity;
 
     /* 뷰 관련 변수 */
     private ImageView img;
@@ -86,7 +86,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
         // 넘길 Intent -> 새로운 구현으로 비활성화
 
         // User_Home_Activity 종료용
-        aActivity = Tag_Update_Activity.AActivity;
+        aActivity = Tag_Check_Activity.AActivity;
 
         // Layout 배경 하얗게
         ll = findViewById(R.id.kid_photo_upload_linearlayout);

@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                Intent_To_User_Home_Activity = new Intent(mContext, Tag_Update_Activity.class);
+                Intent_To_User_Home_Activity = new Intent(mContext, Tag_Check_Activity.class);
                 startActivityForResult(Intent_To_User_Home_Activity, 0);
 
             }

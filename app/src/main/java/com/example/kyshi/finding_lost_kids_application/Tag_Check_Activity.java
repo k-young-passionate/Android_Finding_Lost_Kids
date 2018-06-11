@@ -16,13 +16,13 @@ import android.widget.Toast;
 
 import com.example.kyshi.finding_lost_kid_application.R;
 
-public class Tag_Update_Activity extends AppCompatActivity {
+public class Tag_Check_Activity extends AppCompatActivity {
     private final static int REQUEST_CODE_KID_PHOTO = 400;
 
     // Intent, context, activity 관련 변수
     private Context mContext = this;
     private Intent intenttokidphotouploadactivity = null;
-    public static Tag_Update_Activity AActivity;
+    public static Tag_Check_Activity AActivity;
     private Intent getIntent;
     private Intent turnoverIntent;
 
@@ -49,7 +49,7 @@ public class Tag_Update_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_home);
 
-        AActivity = Tag_Update_Activity.this;    // Kid_Photo_Upload_Activity 에서 여기 Activity 종료용
+        AActivity = Tag_Check_Activity.this;    // Kid_Photo_Upload_Activity 에서 여기 Activity 종료용
         // 지난 것에서 가져온 intent
         getIntent = getIntent();
 
