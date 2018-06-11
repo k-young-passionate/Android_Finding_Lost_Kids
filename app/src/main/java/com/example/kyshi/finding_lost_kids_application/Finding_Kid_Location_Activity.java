@@ -8,7 +8,6 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -37,11 +36,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -51,16 +47,13 @@ import uk.co.senab.photoview.PhotoViewAttacher;
 
 public class Finding_Kid_Location_Activity extends AppCompatActivity {
     private Context mContext;
-    private Intent intenttolostchild;
+
+    /* DB 관련 변수 */
+    DBhelp dbhelp;
+    LocationDB dbloc;
 
     /* 서버 통신 관련 변수 */
     private String ANDROID_ID;
-    final private static String serverconnURL = "http://swp3.gonetis.com:8888/";
-    private String URL;
-    private URL url;
-    private HttpURLConnection httpURL;
-    private BufferedReader br;
-    private String servervalue;
     AsyncTask<String, Void, String> httpGetTask;
     AsyncTask<String, Void, String> httpGetReportTask;
     AsyncTask<String, Void, Bitmap> httpGetMapTask;
@@ -76,27 +69,22 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
     /* Layout(지도) 관련 변수*/
     private ImageView map;
-    private Bitmap image1, image2, map_bitmap;
-    private Canvas canvas;
-    private Paint paint = new Paint();
+    private Bitmap map_bitmap;
     private PhotoViewAttacher attacher;
     private String map_url;
     private ImageButton markerButton;
 
     /* Layout(navigation view) 관련 변수 */
-    private  View view;
-    private AppCompatActivity activity;
-    List<String> childs = new ArrayList<>(); // child 이름을 보관하는 List 배열
-    List<String> tags = new ArrayList<>(); // 각 child 에 해당하는 tag 정보를 보관하는 배열
-    List<Boolean> checkedItems = new ArrayList<>(); // child selection 에서 체크 되었는지 여부를 global 변수로 관리
-    List<String> childImagename = new ArrayList<>(); // 각각의 child 에 해당하는 이미지 비트맵 어레이를 보관하는 배열
-    List<Integer> xloc = new ArrayList<>();
-    List<Integer> yloc = new ArrayList<>();
+    String tag[];
+    String child[];
+    String tagpluschildlist[];
+    int check = 0;
+    boolean checkedItems[]; // child selection 에서 체크 되었는지 여부를 global 변수로 관리
+    ArrayList<byte[]> photolist = new ArrayList<>();
     private boolean isFabOpen = false;
     private FloatingActionButton fab, reportbutton, returnbutton;
     private Animation fab_open, fab_close, rotate_forward, rotate_backward;
     ActionBarDrawerToggle drawerToggle;
-    String child = "child";
 
     /* SharedPreference 관련 변수*/
     private SharedPreferences sp;
@@ -110,10 +98,20 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         mContext = this;
 
+        // DB 설정
+        dbhelp = DBhelp.getHelper(mContext);
+        dbhelp.onOpen(MainActivity.db_kid);
+        dbloc = new LocationDB(getApplicationContext(), "varied5.db", null, 2);
+
+        // 지도 그리기 관련 설정
+        Bitmap map1 = BitmapFactory.decodeResource(getResources(), R.drawable.child1);
+        Bitmap map2 = BitmapFactory.decodeResource(getResources(), R.drawable.child2);
+        photolist = dbhelp.getPhotoArray();
+
         // 서버관련 변수 값 지정 (연결할 url)
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
 
-
+        // 화면 뷰 관련 설정
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.finding_kid_location);
 
@@ -124,17 +122,17 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
         // 지도 관련 변수 값 설정
         Bitmap defaultMap;
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        fab = (FloatingActionButton) findViewById(R.id.fab);
-        reportbutton = (FloatingActionButton) findViewById(R.id.report_fab);
-        returnbutton = (FloatingActionButton) findViewById(R.id.return_fab);
+        fab = findViewById(R.id.fab);
+        reportbutton = findViewById(R.id.report_fab);
+        returnbutton = findViewById(R.id.return_fab);
         fab_open = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_open);
         fab_close = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_close);
         rotate_forward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_forward);
         rotate_backward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_backward);
-        markerButton = (ImageButton) findViewById(R.id.marker);
+        markerButton = findViewById(R.id.marker);
 
         /* http Asynctask 선언 */
 
@@ -143,7 +141,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             protected String doInBackground(String... strings) {
                 String result = null;
                 ServerConnection sc = new ServerConnection();
-                result = sc.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_DELETE);
+                result = ServerConnection.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, ServerConnection.MODE_DELETE);
 
                 return result;
             }
@@ -155,7 +153,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             protected String doInBackground(String... strings) {
                 String result = null;
                 ServerConnection sc = new ServerConnection();
-                result = sc.CONNECTION("emerg/" + ANDROID_ID + "/" +strings[0], null, ANDROID_ID, sc.MODE_DELETE);
+                result = ServerConnection.CONNECTION("emerg/" + ANDROID_ID + "/" + strings[0], null, ANDROID_ID, ServerConnection.MODE_DELETE);
 
                 return result;
             }
@@ -174,7 +172,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
                 mTimer.cancel();
 
-                if(!httpGetTask.isCancelled()){
+                if (!httpGetTask.isCancelled()) {
                     httpGetTask.cancel(true);
                 }
 
@@ -188,7 +186,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                if(!httpDeleteTask.isCancelled()){
+                if (!httpDeleteTask.isCancelled()) {
                     httpDeleteTask.cancel(true);
                 }
 
@@ -203,15 +201,15 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         reportbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try{
+                try {
                     httpGetReportTask.execute(pickedtag);
 
-                    if(!httpGetReportTask.isCancelled()){
+                    if (!httpGetReportTask.isCancelled()) {
                         httpGetReportTask.cancel(true);
                     }
 
                     Toast.makeText(getBaseContext(), "신고되었습니다.", Toast.LENGTH_LONG).show();
-                } catch(Exception e){
+                } catch (Exception e) {
                     Toast.makeText(getBaseContext(), "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
                 }
             }
@@ -237,7 +235,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         });
 
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
 
 
         drawerToggle = new ActionBarDrawerToggle(this, drawer, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
@@ -251,30 +249,36 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             @Override
             public void onDrawerClosed(View drawerView) {
                 super.onDrawerClosed(drawerView);
-                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+                DrawerLayout drawer = findViewById(R.id.drawer_layout);
 
             }
         };
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
         ///////*  처음 어플을 켰을 때  기본 지도를 그려주는 부분입니다 *////////////////////////////////////////////
-        defaultMap = BitmapFactory.decodeResource(getResources(), R.drawable.map); // R.drawable.map 기본 지도(Bitmap 형식)
-        Bitmap tempBitmap = Bitmap.createBitmap(defaultMap.getWidth(), defaultMap.getWidth(), Bitmap.Config.RGB_565);
-        Bitmap marker = BitmapFactory.decodeResource(getResources(),R.drawable.marker);
-        Bitmap resize = Bitmap.createScaledBitmap(defaultMap, defaultMap.getWidth(), defaultMap.getHeight(), true); // 크기 재조정
+        map = findViewById(R.id.map); // map Imageview 선언 및 초기화
+        Bitmap base = BitmapFactory.decodeResource(getResources(), R.drawable.map);
+        Bitmap fromDB = getBitmapFromByteArray(dbloc.getmapResult("2", getByteArrayFromBitmap(base)));
+        //defaultMap = BitmapFactory.decodeResource(getResources(), R.drawable.asd); // R.drawable.map 기본 지도(Bitmap 형식)
+
+        Bitmap tempBitmap = Bitmap.createBitmap(fromDB.getWidth() + 500, fromDB.getWidth() + 200, Bitmap.Config.RGB_565);
+        //Bitmap marker = BitmapFactory.decodeResource(getResources(), R.drawable.marker);
+        Bitmap resize = Bitmap.createScaledBitmap(fromDB, fromDB.getWidth() + 500, fromDB.getWidth() + 200, true); // 크기 재조정
         Canvas canvas = new Canvas(tempBitmap); // 그림을 그리는 캔버스 변수 선언 및 초기화
         canvas.drawBitmap(resize, 0, 0, null); // 캔버스 위에 resize bitmap 을 그림
 
-        map = (ImageView)findViewById(R.id.map); // map Imageview 선언 및 초기화
+
         map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap)); // map 에 방금까지 그린 canvas 적용
         attacher = new PhotoViewAttacher(map); // 확대 및 축소 기능
         attacher.setOnViewTapListener(viewTapListener);
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+
+        // 네비게이션 바에서 아이 선택하는 함수
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -286,30 +290,33 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                     final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(Finding_Kid_Location_Activity.this);
                     alertBuilder.setIcon(R.drawable.ic_menu_camera);
                     alertBuilder.setTitle("아이를 선택하세요");
-                    final String child[] = new String[childs.size()];
-                    boolean checked[] = new boolean[checkedItems.size()];
 
-                    for(int i=0; i< childs.size(); i++) {
-                        child[i] = childs.get(i);
-                    }
-                    for(int j=0; j<checkedItems.size(); j++) {
-                        checked[j] = checkedItems.get(j);
+
+                    ArrayList<String> temp = dbloc.getTagResult();
+                    ArrayList<String> childtemp = dbloc.getResultArray();
+
+
+                    child = new String[temp.size()];
+                    tag = new String[temp.size()];
+                    tagpluschildlist = new String[temp.size()];
+                    //check = new boolean[temp.size()];
+                    for (int i = 0; i < temp.size(); i++) {
+                        tagpluschildlist[i] = temp.get(i);
+                        child[i] = childtemp.get(i);
+                        tag[i] = temp.get(i);
+                        tagpluschildlist[i] += "(";
+                        tagpluschildlist[i] += child[i];
+                        tagpluschildlist[i] += ")";
+
                     }
 
-                    alertBuilder.setMultiChoiceItems(child, checked, new DialogInterface.OnMultiChoiceClickListener() {
+                    alertBuilder.setSingleChoiceItems(tagpluschildlist, check, new DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                            if(isChecked) {
-                                checkedItems.remove(which);
-                                checkedItems.add(which,true);
-                            } else {
-                                Toast.makeText(mContext, "bool: " + isChecked, Toast.LENGTH_SHORT).show();
-                                checkedItems.remove(which);
-                                checkedItems.add(which, false);
-                            }
+                        public void onClick(DialogInterface dialog, int which) {
+                            check = which;
+                            Toast.makeText(getBaseContext(), "check: " + check, Toast.LENGTH_SHORT).show();
+                            pickedtag = tag[which];
                         }
-
-
                     });
 
                     //버튼
@@ -317,6 +324,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
+
                                     dialog.dismiss();
                                 }
                             }
@@ -328,17 +336,12 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
 
                 }
-                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+                DrawerLayout drawer = findViewById(R.id.drawer_layout);
                 //drawer.closeDrawer(GravityCompat.START);
                 return true;
             }
         });
-
     }
-
-
-
-
 
 
     @Override
@@ -358,7 +361,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             protected String doInBackground(String... strings) {
                                 String result = null;
                                 ServerConnection sc = new ServerConnection();
-                                result = sc.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_GET);
+                                result = ServerConnection.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, ServerConnection.MODE_GET);
 
                                 return result;
                             }
@@ -369,31 +372,16 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             }
                         };      // 여기까지 아이 정보 받아오는 친구
 
-                        httpGetMapTask = new AsyncTask<String, Void, Bitmap>() {
-                            @Override
-                            protected Bitmap doInBackground(String... strings) {
-                                Bitmap result = null;
-                                ServerConnection sc = new ServerConnection();
-                                result = sc.CONNECTION_map("map/" + strings[0], null, ANDROID_ID, sc.MODE_GET);
-
-                                return result;
-                            }
-
-                            @Override
-                            protected void onPostExecute(Bitmap result) {
-                                super.onPostExecute(result);
-                            }
-                        };      // 여기까지 지도 정보 받아오는 친구
-
 
                         // JSON Parsing
                         try {
+                            Toast.makeText(getApplicationContext(), "picketag" + pickedtag, Toast.LENGTH_LONG).show();
                             /* 아이 정보 값 받아올 변수들 */
                             String jsonvalue;
                             String name = "";
                             String x, y;
-                            x= "";
-                            y ="";
+                            x = "";
+                            y = "";
                             String location, tag;
                             tag = "";
                             location = "";
@@ -406,56 +394,58 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             jObject = new JSONObject(jsonvalue);
                             jarray = new JSONArray(jObject.get("children").toString());
 
-                            for(int i = 0; i < jarray.length(); i++){
+                            for (int i = 0; i < jarray.length(); i++) {
+
                                 JSONObject jsonObject = jarray.getJSONObject(i);
 
                                 name = "";
                                 x = "";
-                                y= "";
-                                tag="";
-                                location ="";
-                                int resId;
-                                String resName= "@drawable/child_";
-                                name += jsonObject.get("name"); // 아이 이름
-                                tag += jsonObject.get("tag");
-                                x =jsonObject.get("x").toString(); // 아이 x 위치
-                                y =jsonObject.get("y").toString(); // 아이 y위치
-                                location = jsonObject.get("location").toString(); // 아이 위치 (e.g 현대백화점... 등등)
+                                y = "";
+                                tag = "";
+                                location = "";
+                                tag += jsonObject.get("tag"); // 아이 태그
 
-                                if(childs.contains(name))
+                                if (dbloc.search(tag))
                                     continue;
                                 else {
-                                    childs.add(name);
-                                    tags.add(tag);
-                                    checkedItems.add(true);
-                                    resName += tag;
-                                    childImagename.add(resName);
-                                    xloc.add(10); // 나중에 integer 로 변경
-                                    yloc.add(10);
+                                    /////////////////////////////////////////////////////////////
+                                    Toast.makeText(getApplicationContext(), "tag added", Toast.LENGTH_SHORT).show();
+                                    httpGetMapTask = new AsyncTask<String, Void, Bitmap>() {
+                                        @Override
+                                        protected Bitmap doInBackground(String... strings) {
+                                            Bitmap result = null;
+                                            ServerConnection sc = new ServerConnection();
+                                            result = ServerConnection.CONNECTION_map("map/" + strings[0], null, ANDROID_ID, ServerConnection.MODE_GET);
+
+                                            return result;
+                                        }
+
+                                        @Override
+                                        protected void onPostExecute(Bitmap result) {
+                                            super.onPostExecute(result);
+                                        }
+                                    };      // 여기까지 지도 정보 받아오는 친구
+                                    ////// map 을 받기 위해서 httptask 다시 선언/////////
+                                    name += jsonObject.get("name"); // 아이 이름
+
+                                    x = jsonObject.get("x").toString(); // 아이 x 위치
+                                    y = jsonObject.get("y").toString(); // 아이 y위치
+                                    location = jsonObject.get("location").toString(); // 아이 위치 (e.g 현대백화점... 등등)
+                                    Toast.makeText(getApplicationContext(), "name :" + name, Toast.LENGTH_SHORT).show();
+
+                                    map_url = jarray.getJSONObject(i).getString("location"); //
+                                    httpGetMapTask.execute(map_url);
+
+
+                                    map_bitmap = httpGetMapTask.get();    //  tag에 해당하는 bit map 저장 완료
+
+
+                                    dbloc.insert(name, tag, x, y, location, "false", getByteArrayFromBitmap(map_bitmap));
+
                                 }
+                                //Toast.makeText(getApplicationContext(),dbloc.ssearch(),Toast.LENGTH_LONG).show();
+                                //!!이게지도받아오는 코드입니다!!!/ /
                             }
-                            update();
-                            /*** 아이 정보 받아오기 ***/
-
-
-                            /* !!!!!!!!!!!!!!!!!!!!!이게지도받아오는 코드입니다!!!!!!!!!!!!!!!!!!!!! */
-/*                            try {
-                                for(int i = 0; i < jarray.length(); i ++){
-                                    if(jarray.getJSONObject(i).getString("tag").equals(pickedtag)){
-                                        map_url = jarray.getJSONObject(i).getString("location");
-                                    }
-                                }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-*/
-//                            httpGetMapTask.execute(map_url);
-
-
-//                            map_bitmap = httpGetMapTask.get();
-                            /* !!!!!!!!!!!!!!!!!!!!!이게지도받아오는 코드입니다!!!!!!!!!!!!!!!!!!!!! */
-
-
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         } catch (ExecutionException e) {
@@ -464,40 +454,18 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-                        if(!httpGetTask.isCancelled()){
+                        if (!httpGetTask.isCancelled()) {
                             httpGetTask.cancel(true);
                         }
-
-                        /*
-                         * 이 안에 지도 그리기 함수를 구현하시오.
-                         * 값 받아온 것 사용법
-                         *
-                         * int x, y;
-                         * String location, tag;
-                         * for(int i = 0; i < jarray.length(); i++){
-                         *      JSONObject jsonObject = jarray.getJSONObject(i);
-                         *      tag = jsonObject.get("tag");
-                         *      x =jsonObject.get("x");
-                         *      y = jsonObject.get("y");
-                         *      location = jsonObject.get("location");
-                         * }
-                         *
-                         * 이러한 식으로 사용해서 이 안에서 지도를 매 번 업데이트 시키면 됩니다.
-                         *
-                         * 여기 안은 UI 상에서 Timer 를 맞춰 돌아가게 한 쓰레드 입니다.
-                         */
-
-
-
-                    }
+                        update();
+                    } //// run 끝
                 });
-
             }
         };
 
         mTimer = new Timer(false);
 
-        mTimer.schedule(mTask,1000, 4000);    // 1초에 한 번 4초마다 호출
+        mTimer.schedule(mTask, 1000, 4000);    // 1초에 한 번 4초마다 호출
     }
 
     @Override
@@ -509,7 +477,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             if (!httpGetTask.isCancelled()) {
                 httpGetTask.cancel(true);
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -537,7 +505,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -561,89 +529,40 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Toast.makeText(getApplicationContext(),"go to setting activity",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "go to setting activity", Toast.LENGTH_SHORT).show();
             return true;
-        }
-        else if(id == R.id.contact){
-            Toast.makeText(getApplicationContext(),"010-8922-5615/ mschanwoo@naver.com",Toast.LENGTH_SHORT).show();
+        } else if (id == R.id.contact) {
+            Toast.makeText(getApplicationContext(), "010-1234-5678/ SE03_05@skku.edu", Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
     } // setting , contact 구현
 
 
-    public void update()
-    {
-        Bitmap defaultMap = BitmapFactory.decodeResource(getResources(), R.drawable.map); // R.drawable.map 기본 지도(Bitmap 형식)
-        Bitmap tempBitmap = Bitmap.createBitmap(defaultMap.getWidth(), defaultMap.getWidth(), Bitmap.Config.RGB_565);
-        Bitmap resize;// 크기 재조정
-        Bitmap markernotSelected = BitmapFactory.decodeResource(getResources(),R.drawable.markerselect);
-        Bitmap markerSelected = BitmapFactory.decodeResource(getResources(),R.drawable.marker);
-        int t,i;
-        Canvas canvas = new Canvas(tempBitmap); // 그림을 그리는 캔버스 변수 선언 및 초기화
-        canvas.drawBitmap(defaultMap,0,0,paint);
+    public void update() {
 
-        for(i=0; i< checkedItems.size(); i++)
-        {
-            markerButton.setVisibility(View.INVISIBLE);
-            Bitmap temp;
-            int resId;
-            int count=0;
-            for(t=0; t< checkedItems.size(); t++)
-            {
-                if(checkedItems.get(t) && (xloc.get(t) == xloc.get(i))) count++;
-            }
-            Toast.makeText(getBaseContext(), "count : "+ count, Toast.LENGTH_SHORT).show();
-            if(count >= 2)
-            {
-                final String sameLoc[] = new String[count];
-                final boolean checktemp[] = new boolean[count];
-                int index = 0;
-                for(t =0; t<checkedItems.size(); t++) {
-                    if (xloc.get(t) == xloc.get(i))
-                        sameLoc[index] = childs.get(t);
-                    index++;
+        if (pickedtag.length() == 0)
+            return;
+        else {
 
-                }
-                markerButton.setVisibility(View.VISIBLE);
-                //  마커 눌렀을때
-                markerButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        //Dialog 생성
-                        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
-                                Finding_Kid_Location_Activity.this);
-                        alertBuilder.setIcon(R.drawable.ic_menu_camera);
-                        alertBuilder.setTitle("클릭한 마커 위치의 아이 리스트");
-                        alertBuilder.setItems(sameLoc, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
+            Bitmap base = BitmapFactory.decodeResource(getResources(), R.drawable.map);
+            Bitmap fromDB = getBitmapFromByteArray(dbloc.getmapResult(pickedtag, getByteArrayFromBitmap(base)));
 
-                            }
-                        });
-                        alertBuilder.show();
-                    }
 
-                });
+            Bitmap tempBitmap = Bitmap.createBitmap(fromDB.getWidth() + 500, fromDB.getWidth() + 200, Bitmap.Config.RGB_565);
+            //Bitmap marker = BitmapFactory.decodeResource(getResources(), R.drawable.marker);
+            Bitmap resize = Bitmap.createScaledBitmap(fromDB, fromDB.getWidth() + 500, fromDB.getWidth() + 200, true); // 크기 재조정
+            Canvas canvas = new Canvas(tempBitmap); // 그림을 그리는 캔버스 변수 선언 및 초기화
+            canvas.drawBitmap(resize, 0, 0, null); // 캔버스 위에 resize bitmap 을 그림
 
-            }
 
-            else {
-                if(checkedItems.get(i)) {
-                    resId = getResources().getIdentifier(childImagename.get(i), "drawable", getPackageName());
-                    Toast.makeText(getBaseContext(), "ID : " + resId, Toast.LENGTH_SHORT).show();
-                    temp = BitmapFactory.decodeResource(getResources(), resId);
-                    Toast.makeText(getBaseContext(), "xloc: " + xloc.get(i) + "yloc: " + yloc.get(i), Toast.LENGTH_SHORT).show();
-                    canvas.drawBitmap(temp, xloc.get(i), yloc.get(i), null);
-                }
-            }
+            map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap)); // map 에 방금까지 그린 canvas 적용
+            attacher = new PhotoViewAttacher(map); // 확대 및 축소 기능
+            attacher.setOnViewTapListener(viewTapListener);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         }
-        map = (ImageView)findViewById(R.id.map); // map Imageview 선언 및 초기화
-        map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap)); // map 에 방금까지 그린 canvas 적용
-        attacher = new PhotoViewAttacher(map); // 확대 및 축소 기능
-        attacher.setOnViewTapListener(viewTapListener);
     }
-
 
 
 
@@ -675,5 +594,26 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
     }
 
+    public byte[] getByteArrayFromBitmap(Bitmap mapbitmap) {
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        mapbitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+        byte[] data = stream.toByteArray();
+
+        return data;
+    }
+
+    public Bitmap getBitmap(byte[] b) {
+        Bitmap bitmap = BitmapFactory.decodeByteArray(b, 0, b.length);
+        return bitmap;
+    }
+
+    public Bitmap getBitmapFromByteArray(byte[] bytes) {
+        try {
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
 

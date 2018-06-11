@@ -62,10 +62,10 @@ public class KidAdapter extends BaseAdapter {
             convertView = inflater.inflate(R.layout.kid, parent, false);
         }
 
-        TextView textView = (TextView) convertView.findViewById(R.id.textView);
-        TextView textView2 = (TextView) convertView.findViewById(R.id.textView2);
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.imageView);
-        CheckBox checkBox = (CheckBox) convertView.findViewById(R.id.checkBox);
+        TextView textView = convertView.findViewById(R.id.textView);
+        TextView textView2 = convertView.findViewById(R.id.textView2);
+        ImageView imageView = convertView.findViewById(R.id.imageView);
+        CheckBox checkBox = convertView.findViewById(R.id.checkBox);
 
 
         Kid kid = kids.get(position);

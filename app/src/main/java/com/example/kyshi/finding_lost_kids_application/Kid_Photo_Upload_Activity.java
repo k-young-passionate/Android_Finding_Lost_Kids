@@ -10,7 +10,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
-import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -35,7 +34,6 @@ import com.example.kyshi.finding_lost_kid_application.R;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
 
 public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
@@ -44,13 +42,12 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     private static final int PICK_FROM_ALBUM = 1;
     private static final int CROP_FROM_IMAGE = 2;
     private static final int MY_CAMERA_REQUEST_CODE = 100;
-    private static final int RESULT_KID_PHOTO = 400;
+
 
     /* 액티비티 관련 변수 */
     private Context mContext = this;
-    private Intent intenttofindinglocationactivity;  // 현재 사용 X
     private Intent turnoverintent;
-    User_Home_Activity aActivity;
+    Tag_Update_Activity aActivity;
 
     /* 뷰 관련 변수 */
     private ImageView img;
@@ -60,7 +57,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
     /* Alert 관련 변수 */
     AlertDialog.Builder builder = null;
-    private CharSequence[] items = {"사진 찍기", "취소"};
+    private CharSequence[] items = {"사진 찍기","취소"};
 
     /* 파일(사진) 관련 변수 */
     private File photoFile = null;
@@ -79,9 +76,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     SharedPreferences sp;
     String tag = null;
 
-    /* SharedPreference 관련 변수 */    // 앱 뷰 변동으로 필요 X
-//    private SharedPreferences sp;
-//    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,10 +84,9 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
 
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         // 넘길 Intent -> 새로운 구현으로 비활성화
-        // intenttofindinglocationactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);    // Finding_Kid_Location_Activity 로 넘어가기 위한 intent
 
         // User_Home_Activity 종료용
-        aActivity = (User_Home_Activity) User_Home_Activity.AActivity;
+        aActivity = Tag_Update_Activity.AActivity;
 
         // Layout 배경 하얗게
         ll = findViewById(R.id.kid_photo_upload_linearlayout);
@@ -127,8 +120,8 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
             protected String doInBackground(Kid... kids) {
 
                 ServerConnection sc = new ServerConnection();
-                String result = sc.CONNECTION("users/" + ANDROID_ID, kid, ANDROID_ID, sc.MODE_POST);
-                String result2 = sc.CONNECTION("photo/" + kid.getTag_sn(), kid, ANDROID_ID, sc.MODE_PHOTO);
+                String result = ServerConnection.CONNECTION("users/" + ANDROID_ID, kid, ANDROID_ID, ServerConnection.MODE_POST);
+                String result2 = ServerConnection.CONNECTION("photo/" + kid.getTag_sn(), kid, ANDROID_ID, ServerConnection.MODE_PHOTO);
                 return result;
             }
         };
@@ -137,9 +130,9 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
          * 뷰에 대한 연동 처리
          */
 
-        ImageButton btn = (ImageButton) findViewById(R.id.upload_button);
-        img = (ImageView) findViewById(R.id.kidView);
-        editText = (EditText) findViewById(R.id.Kid_Name);
+        ImageButton btn = findViewById(R.id.upload_button);
+        img = findViewById(R.id.kidView);
+        editText = findViewById(R.id.Kid_Name);
         kidName = editText.getText();
 
         /**
@@ -157,7 +150,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                             case PICK_FROM_CAMERA:
                                 doTakePhotoAction();
                                 break;
-
                             default:
                                 dialog.dismiss();
                                 break;
@@ -192,8 +184,8 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
                         turnoverintent = new Intent();
                         turnoverintent.putExtra("Name", kidName.toString());
                         turnoverintent.putExtra("Photo", photo);
-                        setResult(RESULT_KID_PHOTO, turnoverintent);
-                        //startActivity(intenttofindinglocationactivity);
+                        setResult(RESULT_OK, turnoverintent);
+
                         finish();
                         Handler handler = new Handler();
                         Runnable r = new Runnable() {
@@ -267,11 +259,11 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
+/*
         if (resultCode != RESULT_OK) {
             return;
         }
-
+*/
         switch (requestCode) {
             case PICK_FROM_ALBUM: {
                 mImageCaptureUri = data.getData();

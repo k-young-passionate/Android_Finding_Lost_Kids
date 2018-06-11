@@ -4,14 +4,23 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteStatement;
+import android.util.Log;
 
 import java.util.ArrayList;
 
 public class DBhelp extends SQLiteOpenHelper {
 // DBHelper 생성자로 관리할 DB 이름과 버전 정보를 받음
 
+    private static DBhelp mInstance;
+    public static SQLiteDatabase db;
+
     public DBhelp(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
         super(context, name, factory, version);
+    }
+
+    public DBhelp(Context context){
+        super(context, MainActivity.DB_NAME, null, 2);
     }
 
     // DB를 새로 생성할 때 호출되는 함수
@@ -20,34 +29,79 @@ public class DBhelp extends SQLiteOpenHelper {
         // 새로운 테이블 생성
         /* 이름은 CHILD이고, 자동으로 값이 증가하는 _id 정수형 기본키 컬럼과
         item(이름) 문자열 컬럼, tag 문자열 컬럼, create_at 문자열 컬럼으로 구성된 테이블을 생성. */
-        db.execSQL("CREATE TABLE CHILD (name TEXT, tag TEXT primary key, create_at TEXT);");
+        Log.e("!!!!!!!!!!!!!!!!!!!!", "oncreatecalled!");
+        db.execSQL("CREATE TABLE CHILD (name TEXT, tag TEXT primary key, create_at TEXT, photo BLOB);");
+    }
+
+    private static void initialize(Context context){
+        if(mInstance ==null){
+            mInstance=new DBhelp(context);
+            try{
+                db = mInstance.getWritableDatabase();
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static final DBhelp getHelper(Context context){
+        initialize(context);
+        return mInstance;
     }
 
     // DB 업그레이드를 위해 버전이 변경될 때 호출되는 함수
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        switch (oldVersion) {
+            case 1:
+                try {
+                    db.beginTransaction();
+                    db.execSQL("ALTER TABLE CHILD ADD COLUMN photo BLOB default NULL");
+                    db.setTransactionSuccessful();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    db.endTransaction();
+                }
+                break;
+        }
 
     }
 
     @Override
     public void onOpen(SQLiteDatabase db) {
         super.onOpen(db);
+        Log.e("!!!!!!!!!!!!!!!!!!!!", "onopencalled!");
     }
 
-
-    public void insert(String create_at, String name, String tag) {
-        // 읽고 쓰기가 가능하게 DB 열기
+    /*
+        public void insert(String create_at, String name, String tag, byte[] photo) {
+            // 읽고 쓰기가 가능하게 DB 열기
+            SQLiteDatabase db = getWritableDatabase();
+            // DB에 입력한 값으로 행 추가
+            db.execSQL("INSERT INTO CHILD VALUES('" +
+                    name + "', '" +
+                    tag + "', '" +
+                    create_at + "','" +
+                    photo +");");
+            db.close();
+        }
+        */
+    public void insert(String create_at, String name, String tag, byte[] photo) {
         SQLiteDatabase db = getWritableDatabase();
-        // DB에 입력한 값으로 행 추가
-        db.execSQL("INSERT INTO CHILD VALUES('" + name + "', '" + tag + "', '" + create_at + "');");
-        db.close();
+        SQLiteStatement p = db.compileStatement("INSERT INTO CHILD VALUES(?,?,?,?);");
+        p.bindString(1, name);
+        p.bindString(2, tag);
+        p.bindString(3, create_at);
+//        p.bindBlob(4, photo);
+        p.execute();
     }
 
     public int findnum() {
         SQLiteDatabase db = getReadableDatabase();
         int result = 0;
         Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM CHILD;", null);
-        while(cursor.moveToNext()){
+        while (cursor.moveToNext()) {
             result += cursor.getInt(0);
         }
         db.close();
@@ -77,6 +131,19 @@ public class DBhelp extends SQLiteOpenHelper {
         }
         db.close();
         return false;
+    }
+
+    public String ssearch(String tag) {
+        SQLiteDatabase db = getReadableDatabase();
+        String result;
+        result = "";
+        Cursor cursor = db.rawQuery("SELECT * FROM CHILD", null);
+        while (cursor.moveToNext()) {
+            result += cursor.getString(0);
+
+
+        }
+        return result;
     }
 
     public void delete(String tag) {
@@ -109,7 +176,7 @@ public class DBhelp extends SQLiteOpenHelper {
         return child_List;
     }
 
-    public ArrayList<String> getItemArray() {
+    public ArrayList<String> getNameArray() {
         SQLiteDatabase db = getReadableDatabase();
         ArrayList<String> child_List = new ArrayList<>();
         String temp = "";
@@ -124,6 +191,7 @@ public class DBhelp extends SQLiteOpenHelper {
 
         return child_List;
     }
+
     public ArrayList<String> getTagArray() {
         SQLiteDatabase db = getReadableDatabase();
         ArrayList<String> child_List = new ArrayList<>();
@@ -138,6 +206,18 @@ public class DBhelp extends SQLiteOpenHelper {
         }
 
         return child_List;
+    }
+
+    public ArrayList<byte[]> getPhotoArray() {
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<byte[]> photo_list = new ArrayList<>();
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM CHILD", null);
+        while (cursor.moveToNext()) {
+            photo_list.add(cursor.getBlob(3));
+        }
+        return photo_list;
     }
 
     public String getResult() {
@@ -157,6 +237,14 @@ public class DBhelp extends SQLiteOpenHelper {
         }
 
         return result;
+    }
+
+    public byte[] getPhotoFromTag(String tag) {
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT photo FROM CHILD WHERE tag = '" + tag + "';", null);
+        cursor.moveToNext();
+        return cursor.getBlob(0);
     }
 }
 

@@ -34,7 +34,7 @@
         <activity
             android:name="com.example.kyshi.finding_lost_kids_application.Kid_Photo_Upload_Activity"
             android:screenOrientation="portrait" />
-        <activity android:name="com.example.kyshi.finding_lost_kids_application.User_Home_Activity"
+        <activity android:name="com.example.kyshi.finding_lost_kids_application.Tag_Update_Activity"
             android:screenOrientation="portrait" />
         <activity
             android:name="com.example.kyshi.finding_lost_kids_application.LoadingActivity"
@@ -44,9 +44,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.example.kyshi.finding_lost_kids_application.mapFind"
-            android:screenOrientation="portrait" />
 
         <provider
             android:name="android.support.v4.content.FileProvider"

@@ -4,12 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
-import org.apache.http.util.ByteArrayBuffer;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,7 +15,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 
 public class ServerConnection {
 
@@ -55,7 +51,7 @@ public class ServerConnection {
             return null;
         }
 
-        Log.e("!!!!!!!!!!!!!!!!!!!!","url: " + url + addurl);
+        Log.e("!!!!!!!!!!!!!!!!!!!!", "url: " + url + addurl);
         /* url 값으로 서버에 연결 */
 
         String json = "";
@@ -132,7 +128,7 @@ public class ServerConnection {
             return null;
         }
 
-        Log.e("!!!!!!!!!!!!!!!!!!!!","url: " + url);
+        Log.e("!!!!!!!!!!!!!!!!!!!!", "url: " + url);
         /* url 값으로 서버에 연결 */
 
         String json = "";
@@ -202,7 +198,7 @@ public class ServerConnection {
 
                         String attachmentName = "photo";
 
-                        httpURLConnection.setRequestProperty("Content-type","multipart/form-data;boundary=" + "*****");
+                        httpURLConnection.setRequestProperty("Content-type", "multipart/form-data;boundary=" + "*****");
                         httpURLConnection.setRequestMethod("POST");
                         httpURLConnection.setDoOutput(true);
                         httpURLConnection.setDoInput(true);
@@ -212,16 +208,16 @@ public class ServerConnection {
                         httpURLConnection.setRequestProperty("Cache-Control", "no-cache");
 
                         // http 소켓 만들기 //
-                        Log.e("????????????????","url: " + url + addurl);
+                        Log.e("????????????????", "url: " + url + addurl);
 
                         // DOS로 사진 처리 //
                         DataOutputStream dos = new DataOutputStream(httpURLConnection.getOutputStream());
                         dos.writeBytes("--*****\r\n");
-                        dos.writeBytes("Content-Disposition: form-data; name=\""+attachmentName+"\";filename=\"" + kid.getPic_addr()+"\"\r\n");
+                        dos.writeBytes("Content-Disposition: form-data; name=\"" + attachmentName + "\";filename=\"" + kid.getPic_addr() + "\"\r\n");
                         dos.writeBytes("\r\n");
                         // DOS로 사진 처리 //
 
-                        Log.e("!???????????????","url: " + url + addurl);
+                        Log.e("!???????????????", "url: " + url + addurl);
                         //////////////////////////////////// 위랑아래가 동시에 될지 의문
 
                         /*
@@ -233,7 +229,6 @@ public class ServerConnection {
                         */
 
 
-
                         // Read from FileInputStream and write to OutputStream
                         byte[] buffer = new byte[2048];
                         if (filename != null) {
@@ -241,12 +236,12 @@ public class ServerConnection {
                             int res = 1;
                             while ((res = fileInputStream.read(buffer)) > 0) {
                                 OutputStream os = httpURLConnection.getOutputStream();
-                                os.write(buffer,0,res);
+                                os.write(buffer, 0, res);
                             }
 
                         }
 
-                        Log.e("!!??????????????","url: " + url + addurl);
+                        Log.e("!!??????????????", "url: " + url + addurl);
 
                         //os.flush();
                         // Disconnection
@@ -280,14 +275,25 @@ public class ServerConnection {
 
             default:
                 try {
-                    is = httpURLConnection.getInputStream();
-                    if (is != null) {
-                        result = convertInputStreamToString(is);
+                    if(addurl != null) {
+                        if (addurl.contains("tagexist")) {
+                            result = "" + httpURLConnection.getResponseCode();
+                        } else {
+                            is = httpURLConnection.getInputStream();
+                            result = convertInputStreamToString(is);
+                        }
                     } else {
-                        result = null;
+                        is = httpURLConnection.getInputStream();
+                        result = convertInputStreamToString(is);
                     }
                 } catch (IOException ioe) {
                     ioe.printStackTrace();
+                    is = httpURLConnection.getErrorStream();
+                    try {
+                        result = convertInputStreamToString(is);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
