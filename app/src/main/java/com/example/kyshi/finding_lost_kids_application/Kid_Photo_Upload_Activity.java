@@ -80,7 +80,7 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.kid_photo_upload);
+        setContentView(R.layout.activity_kid_photo_upload);
 
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
         // 넘길 Intent -> 새로운 구현으로 비활성화

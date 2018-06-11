@@ -113,7 +113,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
         // 화면 뷰 관련 설정
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        setContentView(R.layout.finding_kid_location);
+        setContentView(R.layout.activity_finding_kid_location);
 
 
         // 현재 사용상태 저장하는 sharedpreference 호출

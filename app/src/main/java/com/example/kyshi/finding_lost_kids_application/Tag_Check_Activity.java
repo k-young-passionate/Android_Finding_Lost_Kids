@@ -47,7 +47,7 @@ public class Tag_Check_Activity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_user_home);
+        setContentView(R.layout.activity_tag_check);
 
         AActivity = Tag_Check_Activity.this;    // Kid_Photo_Upload_Activity 에서 여기 Activity 종료용
         // 지난 것에서 가져온 intent
