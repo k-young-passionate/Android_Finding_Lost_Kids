@@ -203,12 +203,10 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     httpGetReportTask.execute(pickedtag);
-
-                    if (!httpGetReportTask.isCancelled()) {
-                        httpGetReportTask.cancel(true);
-                    }
-
                     Toast.makeText(getBaseContext(), "신고되었습니다.", Toast.LENGTH_LONG).show();
+                    if (!httpGetReportTask.isCancelled()) {
+                        httpGetReportTask.cancel(false);
+                    }
                 } catch (Exception e) {
                     Toast.makeText(getBaseContext(), "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
                 }
