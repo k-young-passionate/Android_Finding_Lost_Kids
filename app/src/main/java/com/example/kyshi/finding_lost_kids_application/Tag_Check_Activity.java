@@ -102,8 +102,8 @@ public class Tag_Check_Activity extends AppCompatActivity {
                     };
                     try {
                         if (tag_sn.length() != 0) {
-                            httpTagTask.execute(tag_sn);
-                            if (httpTagTask.get().contains("204")) {
+//                            httpTagTask.execute(tag_sn);
+//                            if (httpTagTask.get().contains("204")) {
                                 kid.setTag_sn(tag_sn);
                                 sp = getSharedPreferences("sp", MODE_PRIVATE);
                                 editor = sp.edit();
@@ -112,9 +112,9 @@ public class Tag_Check_Activity extends AppCompatActivity {
                                 isend = true;
                                 //httpPostTask.execute(tag_sn);
                                 startActivityForResult(intenttokidphotouploadactivity, REQUEST_CODE_KID_PHOTO);
-                            } else {
-                                Toast.makeText(mContext, "태그 번호를 확인해주세요.", Toast.LENGTH_LONG).show();
-                            }
+//                            } else {
+//                                Toast.makeText(mContext, "태그 번호를 확인해주세요.", Toast.LENGTH_LONG).show();
+//                            }
                         } else {
                             Toast.makeText(getApplicationContext(), "태그 번호를 확인해주세요.", Toast.LENGTH_LONG).show();
                         }
