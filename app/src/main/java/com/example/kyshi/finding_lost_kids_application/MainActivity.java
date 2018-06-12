@@ -30,14 +30,12 @@ import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
     /* Intent 및 Context 변수 */
     public static Context mContext;
     private Intent Intent_To_User_Home_Activity = null;
     private Intent Intent_To_Finding_Kid_Location = null;
-    private Intent Intent_To_Kid_Photo_Upload_Activity = null;
     public static SQLiteDatabase db_kid;
 
     /* Layout 관련 변수 */
@@ -55,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences.Editor editor;
 
     /* 서버 관련 Asynctask */
-    AsyncTask<String, Void, String> httpPostTask;
     AsyncTask<String, Void, String> httpDeleteTask;
 
     /* 지역 변수 및 상수 */
@@ -72,22 +69,37 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         mContext = this;
 
+        // 화면 리스트 구현
         dbhelp = new DBhelp(mContext, "CHILD1.db", null, 2);
+
+        // 현재 사용상태 저장하는 sharedpreference 호출
+        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
+        editor = sp.edit();
+        editor.putBoolean("isconnected", false);
+        editor.commit();
+
+        /* 반납했으면 아이 정보 삭제 */
+        if (!sp.getBoolean("isdeleted", false)) {
+            dbhelp.deleteAll();
+            kidAdapter.removeAll();
+            editor = sp.edit();
+            editor.putBoolean("isdeleted", true);
+            editor.commit();
+        }
+
         Bitmap temp = BitmapFactory.decodeResource(getResources(), R.drawable.child1);
         byte[] photo = getByteArrayFromBitmap(temp);
-//        dbhelp.insert("2010","abc","123",photo);
-        //dbloc = new LocationDB(getApplicationContext(),"LOC6.db",null,2);
+
+        // 기본 화면 세팅
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_main);
 
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        // 현재 사용상태 저장하는 sharedpreference 호출
-        sp = getSharedPreferences("sp", Context.MODE_PRIVATE);
 
         // layout 배경 하얗게
         cl = findViewById(R.id.main_activity);
-        cl.setBackgroundColor(Color.rgb(255,254, 179));
+        cl.setBackgroundColor(Color.rgb(255, 254, 179));
 
         /* Listview */
         kidListView = findViewById(R.id.kidListView);
@@ -106,52 +118,16 @@ public class MainActivity extends AppCompatActivity {
         vislay1 = findViewById(R.id.visLay1);
         invislay1 = findViewById(R.id.invisLayout1);
 
-        /* 반납했으면 아이 정보 삭제 */
-        if (!sp.getBoolean("isdeleted", false)) {
-            dbhelp.deleteAll();
-            kidAdapter.removeAll();
-            editor = sp.edit();
-            editor.putBoolean("isdeleted", true);
-            editor.commit();
-        }
-
-        httpPostTask = new AsyncTask<String, Void, String>() {
-            @Override
-            protected String doInBackground(String... strings) {
-
-                ServerConnection sc = new ServerConnection();
-
-//                String result = sc.CONNECTION("users/"+ ANDROID_ID, kidAdapter.getKids(), ANDROID_ID, sc.MODE_POST);
-//                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
-//                return result;
-                return null;
-            }
-        };
-
-
-
 
         /* findind_kid_location 액티비티로 넘기는 버튼 */
         next.setOnClickListener(new ImageButton.OnClickListener() {
             @Override
             public void onClick(View v) {
 
+
                 if (dbhelp.findnum() == 0) {
                     Toast.makeText(mContext, "아이를 등록해주세요.", Toast.LENGTH_LONG).show();
                 } else {
-                    httpPostTask.execute();
-                    try {
-                        Toast.makeText(getApplicationContext(), "" + httpPostTask.get(), Toast.LENGTH_LONG).show();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    }
-
-                    if (!httpPostTask.isCancelled()) {
-                        httpPostTask.cancel(true);
-                    }
-
                     // 현재 사용상태 사용으로 변경 후 commit
                     editor = sp.edit();
                     editor.putBoolean("isconnected", true);
@@ -159,11 +135,10 @@ public class MainActivity extends AppCompatActivity {
 
                     Intent_To_Finding_Kid_Location = new Intent(mContext, Finding_Kid_Location_Activity.class);
                     Intent_To_Finding_Kid_Location.putExtra("String", cur_delivery);
-                    Toast.makeText(getApplicationContext(), "cur: " + cur_delivery, Toast.LENGTH_LONG);
                     db_kid = DBhelp.db;
                     startActivityForResult(Intent_To_Finding_Kid_Location, 0);
-                    //finish();
                 }
+
             }
         });
 
@@ -246,15 +221,7 @@ public class MainActivity extends AppCompatActivity {
                 String tag = data.getStringExtra("Tag");
                 Bitmap photo = data.getParcelableExtra("Photo");
                 byte[] photo_byte = getByteArrayFromBitmap(photo);
-                /*test
-                Drawable d = getResources().getDrawable(R.drawable.child1,null);
-                photo_byte = getByteArrayFromDrawable(d);
-                photo = getBitmapFromByteArray(photo_byte);
-                */
                 dbhelp.insert(dateResult, name, tag, photo_byte);
-                /*
-                String result = dbhelp.getResult();
-                Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();*/
                 Kid kid = new Kid(name, tag, photo);
 
                 kidAdapter.addItem(kid);
@@ -263,10 +230,8 @@ public class MainActivity extends AppCompatActivity {
             case 2:
                 Toast.makeText(getApplicationContext(), "정상적으로 값을 받았습니다.", Toast.LENGTH_SHORT).show();
                 cur_delivery = data.getStringExtra("loc_name");
-                Toast.makeText(getApplicationContext(), cur_delivery, Toast.LENGTH_SHORT).show();
                 break;
             case 3:
-                Toast.makeText(getApplicationContext(), data.getStringExtra("Name"), Toast.LENGTH_SHORT).show();
                 String cur_delivered = data.getStringExtra("Name");
             default:
                 break;

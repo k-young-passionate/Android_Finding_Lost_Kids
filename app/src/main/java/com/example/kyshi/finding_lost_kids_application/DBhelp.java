@@ -5,7 +5,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
-import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -19,7 +18,7 @@ public class DBhelp extends SQLiteOpenHelper {
         super(context, name, factory, version);
     }
 
-    public DBhelp(Context context){
+    public DBhelp(Context context) {
         super(context, MainActivity.DB_NAME, null, 2);
     }
 
@@ -29,22 +28,21 @@ public class DBhelp extends SQLiteOpenHelper {
         // 새로운 테이블 생성
         /* 이름은 CHILD이고, 자동으로 값이 증가하는 _id 정수형 기본키 컬럼과
         item(이름) 문자열 컬럼, tag 문자열 컬럼, create_at 문자열 컬럼으로 구성된 테이블을 생성. */
-        Log.e("!!!!!!!!!!!!!!!!!!!!", "oncreatecalled!");
         db.execSQL("CREATE TABLE CHILD (name TEXT, tag TEXT primary key, create_at TEXT, photo BLOB);");
     }
 
-    private static void initialize(Context context){
-        if(mInstance ==null){
-            mInstance=new DBhelp(context);
-            try{
+    private static void initialize(Context context) {
+        if (mInstance == null) {
+            mInstance = new DBhelp(context);
+            try {
                 db = mInstance.getWritableDatabase();
-            }catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public static final DBhelp getHelper(Context context){
+    public static final DBhelp getHelper(Context context) {
         initialize(context);
         return mInstance;
     }
@@ -71,7 +69,6 @@ public class DBhelp extends SQLiteOpenHelper {
     @Override
     public void onOpen(SQLiteDatabase db) {
         super.onOpen(db);
-        Log.e("!!!!!!!!!!!!!!!!!!!!", "onopencalled!");
     }
 
     /*
@@ -93,7 +90,7 @@ public class DBhelp extends SQLiteOpenHelper {
         p.bindString(1, name);
         p.bindString(2, tag);
         p.bindString(3, create_at);
-//        p.bindBlob(4, photo);
+        p.bindBlob(4, photo);
         p.execute();
     }
 
@@ -156,7 +153,7 @@ public class DBhelp extends SQLiteOpenHelper {
     public void deleteAll() {
         SQLiteDatabase db = getWritableDatabase();
         // 입력한 항목과 일치하는 행 삭제
-        db.execSQL("DELETE FROM CHILD WHERE TAG IS NOT NULL;");
+        db.execSQL("DELETE FROM CHILD;");
         db.close();
     }
 
@@ -220,6 +217,42 @@ public class DBhelp extends SQLiteOpenHelper {
         return photo_list;
     }
 
+    public ArrayList<byte[]> getLocPhotoArray(String loc) {
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<byte[]> photo_list = new ArrayList<>();
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM CHILD WHERE locname = '" + loc + "'", null);
+        while (cursor.moveToNext()) {
+            photo_list.add(cursor.getBlob(3));
+        }
+        return photo_list;
+    }
+
+    public byte[] getTagPhoto(String tag) {
+        SQLiteDatabase db = getReadableDatabase();
+
+        byte[] photo;
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM CHILD WHERE tag = '" + tag + "'", null);
+        cursor.moveToNext();
+        photo = cursor.getBlob(3);
+
+        return photo;
+    }
+
+    public ArrayList<String> getLocNameArray(String loc) {
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<String> result = new ArrayList<>();
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM CHILD WHERE locname = '" + loc + "'", null);
+        while (cursor.moveToNext()) {
+            result.add(cursor.getString(0));
+        }
+        return result;
+    }
+
     public String getResult() {
         // 읽기가 가능하게 DB 열기
         SQLiteDatabase db = getReadableDatabase();
@@ -245,6 +278,13 @@ public class DBhelp extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery("SELECT photo FROM CHILD WHERE tag = '" + tag + "';", null);
         cursor.moveToNext();
         return cursor.getBlob(0);
+    }
+
+
+    public void setPhototest(String tag, byte[] child) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("UPDATE CHILD SET photo='" + child + "'  WHERE name='" + tag + "';");
+        db.close();
     }
 }
 

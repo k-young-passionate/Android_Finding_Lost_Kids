@@ -230,10 +230,6 @@ public class Kid_Photo_Upload_Activity extends AppCompatActivity {
             mImageCaptureUri = Uri.fromFile((new File(Environment.getExternalStorageDirectory(), url)));
         }
 
-
-//        File photoFile = new File(Environment.getExternalStorageDirectory(), url);
-
-
         intent.putExtra(MediaStore.EXTRA_OUTPUT, mImageCaptureUri);
         sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + mImageCaptureUri)));
 

@@ -5,6 +5,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -21,28 +22,13 @@ public class LocationDB extends SQLiteOpenHelper {
         // 새로운 테이블 생성
 
 
-        db.execSQL("CREATE TABLE LOCATION (name TEXT, tag TEXT, locationX TEXT, locationY TEXT, locname TEXT, checked TEXT, BYTE map);");
+        db.execSQL("CREATE TABLE LOCATION (name TEXT, tag TEXT primary key, locationX TEXT, locationY TEXT,  locname TEXT , checked TEXT, map BYTE );");
     }
 
     // DB 업그레이드를 위해 버전이 변경될 때 호출되는 함수
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        /*
-        switch (oldVersion) {
-            case 1:
-                try {
-                    db.beginTransaction();
-                    db.execSQL("ALTER TABLE LOCATIONX ADD COLUMN BYTE map default NULL");
-                    db.setTransactionSuccessful();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    db.endTransaction();
-                }
-                ;
-                break;
-        }
-*/
+
     }
 
     @Override
@@ -117,10 +103,25 @@ public class LocationDB extends SQLiteOpenHelper {
             child_List.add(temp);
             temp = "";
         }
-
+        db.close();
         return child_List;
     }
 
+    public ArrayList<String> getlocResultArray(String loc) {
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<String> child_List = new ArrayList<>();
+        String temp = "";
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION WHERE locname = '"+loc+"'", null);
+        while (cursor.moveToNext()) {
+            temp += "Name :" + cursor.getString(0) + "   " + "tag :" + cursor.getString(1);
+            child_List.add(temp);
+            temp = "";
+        }
+        db.close();
+        return child_List;
+    }
     public void updateChecked(String name, String checkedd) {
         SQLiteDatabase db = getWritableDatabase();
 
@@ -129,10 +130,17 @@ public class LocationDB extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void update(String name, String tag, String locationX, String locationY, String locname, String checked, byte[] tmap) {
+    public void updateLoc(String tag, String locname, byte[] tmap) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("UPDATE LOCATION SET map='" + tmap +"'  WHERE tag='" + tag +"';");
+        db.execSQL("UPDATE LOCATION SET locname ='"+ locname+ "' WHERE tag='" + tag +"';");
+        db.close();
+    }
+    public void updateCor(String tag, String xloc, String yloc) {
         SQLiteDatabase db = getWritableDatabase();
 
-        db.execSQL("UPDATE LOCATION SET NAME=" + name + " SET map=" + tmap + "  SET LOCATIONX=" + locationX + " SET LOCATIONY=" + locationY + " SET LOCNAME=" + locname + " SET BOOL=" + checked + " WHERE ITEM='" + tag + "';");
+        db.execSQL("UPDATE LOCATION  SET locationX='" +xloc+ "'  WHERE tag='" + tag + "';");
+        db.execSQL("UPDATE LOCATION  SET locationY='" +yloc+ "' WHERE tag='" + tag + "';");
         db.close();
     }
 
@@ -173,21 +181,6 @@ public class LocationDB extends SQLiteOpenHelper {
         db.execSQL("DELETE FROM LOCATION WHERE tag='" + tag + "';");
         db.close();
     }
-    /*public ArrayList<String> getResultArray(){
-        SQLiteDatabase db = getReadableDatabase();
-        ArrayList<String> child_List = new ArrayList<>();
-        String temp = "";
-
-        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
-        Cursor cursor = db.rawQuery("SELECT * FROM CHILD", null);
-        while (cursor.moveToNext()) {
-            temp += "이름 :" + cursor.getString(0)+"   "+ "태그 번호 :" + cursor.getString(1);
-            child_List.add(temp);
-            temp="";
-        }
-
-        return child_List;
-    }*/
 
     public ArrayList<String> getTagResult() {
         // 읽기가 가능하게 DB 열기
@@ -202,30 +195,79 @@ public class LocationDB extends SQLiteOpenHelper {
 
         return result;
     }
-    public ArrayList<String> getlocResult() {
+
+    public ArrayList<String> getTagLocationResult(String location) {
         // 읽기가 가능하게 DB 열기
         SQLiteDatabase db = getReadableDatabase();
         ArrayList<String> result = new ArrayList<>();
 
         // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
-        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION", null);
+        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION WHERE locname='" + location + "';", null);
         while (cursor.moveToNext()) {
-            result.add(cursor.getString(4));
+            result.add(cursor.getString(1));
         }
 
         return result;
     }
+
+    public String getlocResult(String tag) {
+        // 읽기가 가능하게 DB 열기
+        SQLiteDatabase db = getReadableDatabase();
+        String loc = "";
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION WHERE tag='" + tag + "';", null);
+        while (cursor.moveToNext()) {
+            if(cursor.getString(1).equals(tag)) {
+                loc += cursor.getString(4);
+                break;
+            }
+        }
+        db.close();
+        return loc;
+    }
+    public ArrayList<String> getXResult(String loc) {
+        // 읽기가 가능하게 DB 열기
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<String> result = new ArrayList<>();
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION WHERE locname='" + loc + "';", null);
+        while (cursor.moveToNext()) {
+            result.add(cursor.getString(2));
+        }
+        db.close();
+        return result;
+    }
+    public ArrayList<String> getYResult(String loc) {
+        // 읽기가 가능하게 DB 열기
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<String> result = new ArrayList<>();
+
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION WHERE locname='" + loc + "';", null);
+        while (cursor.moveToNext()) {
+            result.add(cursor.getString(3));
+        }
+        db.close();
+        return result;
+    }
+
     public byte[] getmapResult(String tag, byte[] base) {
         SQLiteDatabase db = getReadableDatabase();
+        Log.e("!!!!!!!!!!!!!!!!!!!!getmapResultStart", "" + base);
         byte[] temp;
         String temptag = "";
         Cursor cursor = db.rawQuery("SELECT * FROM LOCATION", null);
         while (cursor.moveToNext()) {
             temp = cursor.getBlob(6);
-            if(cursor.getString(1).equals(tag))
+            if(cursor.getString(1).equals(tag)) {
+                Log.e("!!!!!!!!!!!!!!!!!!!!!!!getmapResult", ""+base);
                 return temp;
+            }
         }
         cursor.moveToNext();
+        db.close();
         return base;
     }
 
@@ -236,5 +278,15 @@ public class LocationDB extends SQLiteOpenHelper {
         db.execSQL("DELETE FROM LOCATION WHERE TAG IS NOT NULL;");
         db.close();
     }
+    public ArrayList<String> getLocNameArray(String loc) {
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<String> result = new ArrayList<>();
 
+        // DB에 있는 데이터를 쉽게 처리하기 위해 Cursor를 사용하여 테이블에 있는 모든 데이터 출력
+        Cursor cursor = db.rawQuery("SELECT * FROM LOCATION WHERE locname = '"+loc+"'", null);
+        while (cursor.moveToNext()) {
+            result.add(cursor.getString(0));
+        }
+        return result;
+    }
 }

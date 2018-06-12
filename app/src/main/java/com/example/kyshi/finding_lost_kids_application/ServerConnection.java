@@ -57,14 +57,10 @@ public class ServerConnection {
         String json = "";
         switch (mode) {
             case MODE_GET:
-                if (url.contains("register") | url.contains("users") | url.contains("map")) {
-                    try {
-                        httpURLConnection.setDoInput(true);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    result = null;
+                try {
+                    httpURLConnection.setDoInput(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 break;
 
@@ -87,9 +83,12 @@ public class ServerConnection {
             case MODE_POST:
 
                 break;
+
+            case MODE_GET:
             default:
                 try {
                     is = httpURLConnection.getInputStream();
+
                     if (is != null) {
                         result = BitmapFactory.decodeStream(is);
                     } else {
@@ -128,7 +127,6 @@ public class ServerConnection {
             return null;
         }
 
-        Log.e("!!!!!!!!!!!!!!!!!!!!", "url: " + url);
         /* url 값으로 서버에 연결 */
 
         String json = "";
@@ -217,17 +215,6 @@ public class ServerConnection {
                         dos.writeBytes("\r\n");
                         // DOS로 사진 처리 //
 
-                        Log.e("!???????????????", "url: " + url + addurl);
-                        //////////////////////////////////// 위랑아래가 동시에 될지 의문
-
-                        /*
-                        // 서버에 보내기 //
-                        OutputStream os = httpURLConnection.getOutputStream();
-                        os.write(json.getBytes("UTF-8"));
-                        os.flush();
-                        // 서버에 보내기 //
-                        */
-
 
                         // Read from FileInputStream and write to OutputStream
                         byte[] buffer = new byte[2048];
@@ -240,12 +227,6 @@ public class ServerConnection {
                             }
 
                         }
-
-                        Log.e("!!??????????????", "url: " + url + addurl);
-
-                        //os.flush();
-                        // Disconnection
-                        //httpURLConnection.disconnect();
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -275,7 +256,7 @@ public class ServerConnection {
 
             default:
                 try {
-                    if(addurl != null) {
+                    if (addurl != null) {
                         if (addurl.contains("tagexist")) {
                             result = "" + httpURLConnection.getResponseCode();
                         } else {

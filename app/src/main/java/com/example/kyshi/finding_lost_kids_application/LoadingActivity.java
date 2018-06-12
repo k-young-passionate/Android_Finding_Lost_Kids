@@ -59,10 +59,10 @@ public class LoadingActivity extends AppCompatActivity {
                     protected Integer doInBackground(String... strings) {
                         ServerConnection sc = new ServerConnection();
                         Integer result = 0;
-                        String server_result = sc.CONNECTION(null, null, ANDROID_ID, sc.MODE_GET);
+                        String server_result = ServerConnection.CONNECTION(null, null, ANDROID_ID, ServerConnection.MODE_GET);
                         if (server_result.contains("Hello World!")) {
                             result = 0;
-                            sc.CONNECTION("register/" + ANDROID_ID, null, ANDROID_ID, sc.MODE_GET);
+                            ServerConnection.CONNECTION("register/" + ANDROID_ID, null, ANDROID_ID, ServerConnection.MODE_GET);
                         } else if (result == null) {
                             publishProgress();
                             return -1;
@@ -82,7 +82,7 @@ public class LoadingActivity extends AppCompatActivity {
                     @Override
                     protected void onProgressUpdate(String... values) {
                         super.onProgressUpdate(values);
-                        if(values.toString().equals("-1")){
+                        if (values.toString().equals("-1")) {
                             Toast.makeText(mContext, "서버에 연결이 되지 않습니다.", Toast.LENGTH_SHORT);
                         } else {
                             Toast.makeText(mContext, "네트워크 상태를 확인해주세요.", Toast.LENGTH_SHORT);
@@ -108,11 +108,8 @@ public class LoadingActivity extends AppCompatActivity {
                             // 현재 상태 확인하고 사용중이라면 지도 화면으로, 아니면 정보입력화면으로 이동
                             boolean isusing = sp.getBoolean("isconnected", false);
 
-                            if (isusing) {
-                                intenttocountactivity = new Intent(mContext, Finding_Kid_Location_Activity.class);
-                            } else {
-                                intenttocountactivity = new Intent(mContext, MainActivity.class);
-                            }
+                            intenttocountactivity = new Intent(mContext, MainActivity.class);
+
                             break;
                         }
                     } catch (InterruptedException e) {

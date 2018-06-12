@@ -8,6 +8,11 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -26,8 +31,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.kyshi.finding_lost_kid_application.R;
@@ -73,7 +81,8 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
     private PhotoViewAttacher attacher;
     private String map_url;
     private ImageButton markerButton;
-
+    Bitmap tempBitmap;
+    Canvas canvas;
     /* Layout(navigation view) 관련 변수 */
     String tag[];
     String child[];
@@ -91,7 +100,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
     private SharedPreferences.Editor editor;
 
     /* 기타 변수 */
-    private String pickedtag;
+    private String pickedtag = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,12 +110,12 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         // DB 설정
         dbhelp = DBhelp.getHelper(mContext);
         dbhelp.onOpen(MainActivity.db_kid);
-        dbloc = new LocationDB(getApplicationContext(), "varied5.db", null, 2);
+        dbloc = new LocationDB(getApplicationContext(), "testing123.db", null, 2);
 
         // 지도 그리기 관련 설정
         Bitmap map1 = BitmapFactory.decodeResource(getResources(), R.drawable.child1);
         Bitmap map2 = BitmapFactory.decodeResource(getResources(), R.drawable.child2);
-        photolist = dbhelp.getPhotoArray();
+        //photolist = dbhelp.getPhotoArray();
 
         // 서버관련 변수 값 지정 (연결할 url)
         ANDROID_ID = Settings.Secure.getString(mContext.getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -132,7 +141,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
         fab_close = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_close);
         rotate_forward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_forward);
         rotate_backward = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.rotate_backward);
-        markerButton = findViewById(R.id.marker);
+        //markerButton = findViewById(R.id.marker);
 
         /* http Asynctask 선언 */
 
@@ -142,7 +151,6 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                 String result = null;
                 ServerConnection sc = new ServerConnection();
                 result = ServerConnection.CONNECTION("users/" + ANDROID_ID, null, ANDROID_ID, ServerConnection.MODE_DELETE);
-
                 return result;
             }
         };      // 여기까지 반납하는 친구
@@ -172,28 +180,30 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
                 mTimer.cancel();
 
-                if (!httpGetTask.isCancelled()) {
-                    httpGetTask.cancel(true);
-                }
-
-                httpDeleteTask.execute();
-
                 try {
-                    Toast.makeText(mContext, httpDeleteTask.get(), Toast.LENGTH_LONG);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
+                    if (!httpGetTask.isCancelled()) {
+                        httpGetTask.cancel(true);
+                    }
 
-                if (!httpDeleteTask.isCancelled()) {
-                    httpDeleteTask.cancel(true);
-                }
+                    httpDeleteTask.execute();
 
-                Intent toMainActivity = new Intent(mContext, MainActivity.class);
-                Toast.makeText(mContext, "반납되었습니다.", Toast.LENGTH_LONG).show();
-                startActivity(toMainActivity);
-                finish();
+                    for (int i = 0; i < 100; i++) {
+                        Log.d("time delay", i + "delayed");
+                    }
+
+                    if (!httpDeleteTask.isCancelled()) {
+                        httpDeleteTask.cancel(true);
+                    }
+
+                    Intent toMainActivity = new Intent(mContext, MainActivity.class);
+                    Toast.makeText(mContext, "반납되었습니다.", Toast.LENGTH_LONG).show();
+                    dbloc.deleteall();
+                    dbhelp.deleteAll();
+                    startActivity(toMainActivity);
+                    finish();
+                } catch (Exception e) {
+                    Toast.makeText(mContext, "네트워크 상태를 확인해주세요.", Toast.LENGTH_LONG).show();
+                }
             }
         });
 
@@ -289,10 +299,8 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                     alertBuilder.setIcon(R.drawable.ic_menu_camera);
                     alertBuilder.setTitle("아이를 선택하세요");
 
-
                     ArrayList<String> temp = dbloc.getTagResult();
                     ArrayList<String> childtemp = dbloc.getResultArray();
-
 
                     child = new String[temp.size()];
                     tag = new String[temp.size()];
@@ -312,7 +320,6 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             check = which;
-                            Toast.makeText(getBaseContext(), "check: " + check, Toast.LENGTH_SHORT).show();
                             pickedtag = tag[which];
                         }
                     });
@@ -329,13 +336,10 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                     );
                     //adapter setting
 
-
                     alertBuilder.show();
-
 
                 }
                 DrawerLayout drawer = findViewById(R.id.drawer_layout);
-                //drawer.closeDrawer(GravityCompat.START);
                 return true;
             }
         });
@@ -373,7 +377,6 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
                         // JSON Parsing
                         try {
-                            Toast.makeText(getApplicationContext(), "picketag" + pickedtag, Toast.LENGTH_LONG).show();
                             /* 아이 정보 값 받아올 변수들 */
                             String jsonvalue;
                             String name = "";
@@ -402,12 +405,18 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                                 tag = "";
                                 location = "";
                                 tag += jsonObject.get("tag"); // 아이 태그
+                                name += jsonObject.get("name"); // 아이 이름
+                                x = jsonObject.get("x").toString(); // 아이 x 위치
+                                y = jsonObject.get("y").toString(); // 아이 y위치
+                                location = jsonObject.get("location").toString(); // 아이 위치 (e.g 현대백화점... 등등)
 
-                                if (dbloc.search(tag))
-                                    continue;
-                                else {
+                                map_url = jarray.getJSONObject(i).getString("location"); //
+                                if (dbloc.search(tag) && dbloc.getlocResult(tag).equals(map_url)) // tag도 같고 층도 안변했다면
+                                {
+
+                                    dbloc.updateCor(tag, x, y);  // 좌표만 변경
+                                } else {
                                     /////////////////////////////////////////////////////////////
-                                    Toast.makeText(getApplicationContext(), "tag added", Toast.LENGTH_SHORT).show();
                                     httpGetMapTask = new AsyncTask<String, Void, Bitmap>() {
                                         @Override
                                         protected Bitmap doInBackground(String... strings) {
@@ -424,24 +433,21 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                                         }
                                     };      // 여기까지 지도 정보 받아오는 친구
                                     ////// map 을 받기 위해서 httptask 다시 선언/////////
-                                    name += jsonObject.get("name"); // 아이 이름
 
-                                    x = jsonObject.get("x").toString(); // 아이 x 위치
-                                    y = jsonObject.get("y").toString(); // 아이 y위치
-                                    location = jsonObject.get("location").toString(); // 아이 위치 (e.g 현대백화점... 등등)
-                                    Toast.makeText(getApplicationContext(), "name :" + name, Toast.LENGTH_SHORT).show();
 
-                                    map_url = jarray.getJSONObject(i).getString("location"); //
                                     httpGetMapTask.execute(map_url);
-
-
-                                    map_bitmap = httpGetMapTask.get();    //  tag에 해당하는 bit map 저장 완료
-
-
-                                    dbloc.insert(name, tag, x, y, location, "false", getByteArrayFromBitmap(map_bitmap));
-
+                                    if (map_url.equals("none")) {
+                                        map_bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.map);
+                                    } else {
+                                        map_bitmap = httpGetMapTask.get();    //  tag에 해당하는 bit map 저장 완료
+                                    }
+                                    if (!dbloc.search(tag)) { // 기존 tag가 없으면 insert
+                                        dbloc.insert(name, tag, x, y, location, "false", getByteArrayFromBitmap(map_bitmap));
+                                    } else if (!dbloc.getlocResult(tag).equals(location)) { // map 이름이 다르다면
+                                        dbloc.delete(tag);
+                                        dbloc.insert(name,tag,x,y,location,"false",getByteArrayFromBitmap(map_bitmap));
+                                    } // 이부분은 update 함수가 잘 안먹어서 이렇게 씀.
                                 }
-                                //Toast.makeText(getApplicationContext(),dbloc.ssearch(),Toast.LENGTH_LONG).show();
                                 //!!이게지도받아오는 코드입니다!!!/ /
                             }
                         } catch (InterruptedException e) {
@@ -455,15 +461,88 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                         if (!httpGetTask.isCancelled()) {
                             httpGetTask.cancel(true);
                         }
+
                         update();
                     } //// run 끝
                 });
+
             }
         };
 
         mTimer = new Timer(false);
 
-        mTimer.schedule(mTask, 1000, 4000);    // 1초에 한 번 4초마다 호출
+        mTimer.schedule(mTask, 1000, 7000);    // 1초에 한 번 4초마다 호출
+    }
+
+    public void update() {
+
+        if (pickedtag.length() == 0)
+            return;
+        else {
+            final ArrayList<String> child = dbloc.getResultArray();  // 밑의 listview 리스너에서 쓸수있도록 final 선언
+            final ArrayList<String> pickedX;
+            final ArrayList<String> pickedY;
+            final ArrayList<byte[]> photo_list;
+            String loc = dbloc.getlocResult(pickedtag);
+            pickedX = dbloc.getXResult(loc);
+            pickedY = dbloc.getYResult(loc);
+            ArrayList<String> child_loc_name = dbloc.getlocResultArray(loc);
+            ArrayList<String> child_tag_loc = dbloc.getTagLocationResult(loc);
+            final String[] Listchild = new String[child_loc_name.size()]; // 지도 오른쪽 아이 리스트뷰에 들어가는 리스트
+
+            photo_list = new ArrayList<>();
+            //**//photo_list = dbhelp.getLocPhotoArray(loc); // 해당 location 에 해당하는 애들 사진 array 받는다. 사진넣고 주석풀어서 사용
+            //*// 테스트용
+
+            for (int i = 0; i < child_tag_loc.size(); i++) {
+                Bitmap tempp = BitmapFactory.decodeByteArray(dbhelp.getTagPhoto(child_tag_loc.get(i)), 0, dbhelp.getTagPhoto(child_tag_loc.get(i)).length);
+                photo_list.add(getByteArrayFromBitmap(tempp));
+            }
+
+
+            Bitmap base = BitmapFactory.decodeResource(getResources(), R.drawable.map);
+
+            Bitmap fromDB = getBitmapFromByteArray(dbloc.getmapResult(pickedtag, getByteArrayFromBitmap(base)));
+            //http://swp3.gonetis.com:8888/location/aed46c541c320973/5555/bb2
+
+            tempBitmap = Bitmap.createBitmap(fromDB.getWidth() + 500, fromDB.getWidth() + 200, Bitmap.Config.RGB_565);
+            //Bitmap marker = BitmapFactory.decodeResource(getResources(), R.drawable.marker);
+            Bitmap resize = Bitmap.createScaledBitmap(fromDB, fromDB.getWidth() + 500, fromDB.getWidth() + 200, true); // 크기 재조정
+            canvas = new Canvas(tempBitmap); // 그림을 그리는 캔버스 변수 선언 및 초기화
+            canvas.drawBitmap(resize, 0, 0, null); // 캔버스 위에 resize bitmap 을 그림
+            for (int i = 0; i < pickedX.size(); i++) {
+
+                Bitmap drawchild = getBitmapFromByteArray(photo_list.get(i));
+                Bitmap texted = writeOnDrawable(drawchild, child.get(i), 133);
+                Bitmap rounded = getCircularBitmap(texted);
+                Listchild[i] = child_loc_name.get(i);
+                canvas.drawBitmap(rounded, Integer.parseInt(pickedX.get(i)), Integer.parseInt(pickedY.get(i)), null);
+
+            } // 해당 loc 으로 받은 x,y 값, 아이 사진을 캔버스에 각각 그린다.
+
+            map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap)); // map 에 방금까지 그린 canvas 적용
+            attacher = new PhotoViewAttacher(map); // 확대 및 축소 기능
+            attacher.setOnViewTapListener(viewTapListener);
+            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, Listchild);
+            ListView listview = findViewById(R.id.present_child_list);
+            listview.setAdapter(adapter);
+            listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                    Bitmap drawchild = getBitmapFromByteArray(photo_list.get(position));
+                    Bitmap texted = writeOnDrawable(drawchild, child.get(position), 60);
+                    Bitmap rounded = getCircularBitmap(texted);
+                    canvas.drawBitmap(rounded, Integer.parseInt(pickedX.get(position)), Integer.parseInt(pickedY.get(position)), null);
+
+                    map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap)); // map 에 방금까지 그린 canvas 적용
+                    attacher = new PhotoViewAttacher(map); // 확대 및 축소 기능
+                    attacher.setOnViewTapListener(viewTapListener);
+                }
+            });
+
+        }
     }
 
     @Override
@@ -484,19 +563,7 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
     PhotoViewAttacher.OnViewTapListener viewTapListener = new PhotoViewAttacher.OnViewTapListener() {
         @Override
         public void onViewTap(View view, float x, float y) {
-            //map.setVisibility(View.VISIBLE);
-/*            Bitmap image1, image2, resize;
-            image1 = BitmapFactory.decodeResource(getResources(), R.drawable.map);
-            image2 = BitmapFactory.decodeResource(getResources(), R.drawable.location);
-            Bitmap tempBitmap = Bitmap.createBitmap(map.getWidth(), map.getWidth(), Bitmap.Config.RGB_565);
-            resize = Bitmap.createScaledBitmap(image1, map.getWidth(), map.getHeight(), true);
-            Canvas canvas = new Canvas(tempBitmap);
-            canvas.drawBitmap(resize, 0, 0, null);
-            canvas.drawBitmap(image2, x, y, null);
 
-            map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap));
-            Toast.makeText(getApplicationContext(), "image_width: " + image1.getWidth() + "image_height: " + image1.getHeight(), Toast.LENGTH_SHORT).show();
-         */
 
         }
     };
@@ -527,42 +594,14 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Toast.makeText(getApplicationContext(), "go to setting activity", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "아직은 이용하실 수 없는 기능입니다.", Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.contact) {
-            Toast.makeText(getApplicationContext(), "010-1234-5678/ SE03_05@skku.edu", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "010-1234-5678/ Software5@skku.edu", Toast.LENGTH_SHORT).show();
         }
 
         return super.onOptionsItemSelected(item);
     } // setting , contact 구현
-
-
-    public void update() {
-
-        if (pickedtag.length() == 0)
-            return;
-        else {
-
-            Bitmap base = BitmapFactory.decodeResource(getResources(), R.drawable.map);
-            Bitmap fromDB = getBitmapFromByteArray(dbloc.getmapResult(pickedtag, getByteArrayFromBitmap(base)));
-
-
-            Bitmap tempBitmap = Bitmap.createBitmap(fromDB.getWidth() + 500, fromDB.getWidth() + 200, Bitmap.Config.RGB_565);
-            //Bitmap marker = BitmapFactory.decodeResource(getResources(), R.drawable.marker);
-            Bitmap resize = Bitmap.createScaledBitmap(fromDB, fromDB.getWidth() + 500, fromDB.getWidth() + 200, true); // 크기 재조정
-            Canvas canvas = new Canvas(tempBitmap); // 그림을 그리는 캔버스 변수 선언 및 초기화
-            canvas.drawBitmap(resize, 0, 0, null); // 캔버스 위에 resize bitmap 을 그림
-
-
-            map.setImageDrawable(new BitmapDrawable(getResources(), tempBitmap)); // map 에 방금까지 그린 canvas 적용
-            attacher = new PhotoViewAttacher(map); // 확대 및 축소 기능
-            attacher.setOnViewTapListener(viewTapListener);
-            ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        }
-    }
-
-
 
 
     public void animateFAB() {
@@ -588,8 +627,6 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             isFabOpen = true;
             Log.d("Raj", "open");
         }
-
-
     }
 
     public byte[] getByteArrayFromBitmap(Bitmap mapbitmap) {
@@ -613,5 +650,56 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
             return null;
         }
     }
+
+    public static Bitmap getCircularBitmap(Bitmap bitmap) {
+        Bitmap output;
+
+        if (bitmap.getWidth() > bitmap.getHeight()) {
+            output = Bitmap.createBitmap(bitmap.getHeight(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        } else {
+            output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getWidth(), Bitmap.Config.ARGB_8888);
+        }
+
+        Canvas canvas = new Canvas(output);
+
+        final int color = 0xff424242;
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        float r = 0;
+
+        if (bitmap.getWidth() > bitmap.getHeight()) {
+            r = bitmap.getHeight() / 2;
+        } else {
+            r = bitmap.getWidth() / 2;
+        }
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        canvas.drawCircle(r, r, r, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+        return output;
+    }
+
+    public Bitmap writeOnDrawable(Bitmap origin, String text, int TextSize) {
+
+        Bitmap bm = origin.copy(Bitmap.Config.ARGB_8888, true);
+
+
+        Paint paint = new Paint();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.RED);
+        paint.setTextSize(TextSize);
+        paint.setTextAlign(Paint.Align.CENTER);
+
+        Canvas canvas = new Canvas(bm);
+        canvas.drawText(text, bm.getWidth() / 2, bm.getHeight() / 2, paint);
+
+        return bm;
+    }
+
+
 }
 

@@ -9,28 +9,32 @@
     tools:context="com.example.kyshi.finding_lost_kids_application.Finding_Kid_Location_Activity"
     tools:showIn="@layout/app_bar_main">
 
-    <ImageView
-        android:id="@+id/map"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/map" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginLeft="350dp"
+        android:layout_marginStart="8dp"
         android:orientation="vertical"
-        >
+        app:layout_constraintStart_toEndOf="parent">
 
-        <ImageButton
-            android:id="@+id/marker"
-            android:padding= "0dp"
-            android:focusableInTouchMode="true"
-            android:layout_width="57dp"
-            android:layout_height="68dp"
-            android:layout_marginLeft="0dp"
-            android:layout_marginTop="130dp"
-            android:src="@drawable/selector"
-            android:visibility="invisible"/>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/map"
+                android:layout_width="406dp"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/map" />
+
+            <ListView
+                android:id="@+id/present_child_list"
+                android:layout_width="179dp"
+                android:layout_height="228dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                tools:layout_editor_absoluteX="500dp" />
+        </RelativeLayout>
 
     </LinearLayout>
 

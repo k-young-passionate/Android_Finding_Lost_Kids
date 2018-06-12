@@ -68,7 +68,7 @@ public class Tag_Check_Activity extends AppCompatActivity {
 
                 ServerConnection sc = new ServerConnection();
 
-                String result = ServerConnection.CONNECTION("users/"+ ANDROID_ID, kid, ANDROID_ID, ServerConnection.MODE_POST);
+                String result = ServerConnection.CONNECTION("users/" + ANDROID_ID, kid, ANDROID_ID, ServerConnection.MODE_POST);
 //                                                sc.CONNECTION("map/" + map_id, null, ANDROID_ID);
                 return result;
             }
@@ -91,7 +91,7 @@ public class Tag_Check_Activity extends AppCompatActivity {
             public void onClick(View v) {
                 tag_sn = Tag_sn.getText().toString();
                 boolean isend = false;
-                while(true){
+                while (true) {
                     httpTagTask = new AsyncTask<String, Void, String>() {
                         @Override
                         protected String doInBackground(String... strings) {
@@ -102,8 +102,8 @@ public class Tag_Check_Activity extends AppCompatActivity {
                     };
                     try {
                         if (tag_sn.length() != 0) {
-//                            httpTagTask.execute(tag_sn);
-//                            if (httpTagTask.get().contains("204")) {
+                            httpTagTask.execute(tag_sn);
+                            if (httpTagTask.get().contains("204")) {
                                 kid.setTag_sn(tag_sn);
                                 sp = getSharedPreferences("sp", MODE_PRIVATE);
                                 editor = sp.edit();
@@ -112,9 +112,9 @@ public class Tag_Check_Activity extends AppCompatActivity {
                                 isend = true;
                                 //httpPostTask.execute(tag_sn);
                                 startActivityForResult(intenttokidphotouploadactivity, REQUEST_CODE_KID_PHOTO);
-//                            } else {
-//                                Toast.makeText(mContext, "태그 번호를 확인해주세요.", Toast.LENGTH_LONG).show();
-//                            }
+                            } else {
+                                Toast.makeText(mContext, "태그 번호를 확인해주세요.", Toast.LENGTH_LONG).show();
+                            }
                         } else {
                             Toast.makeText(getApplicationContext(), "태그 번호를 확인해주세요.", Toast.LENGTH_LONG).show();
                         }
@@ -141,9 +141,9 @@ public class Tag_Check_Activity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode==REQUEST_CODE_KID_PHOTO&&resultCode==RESULT_OK){
+        if (requestCode == REQUEST_CODE_KID_PHOTO && resultCode == RESULT_OK) {
             data.putExtra("Tag", tag_sn);
-            setResult(1,data);
+            setResult(1, data);
             finish();
         }
 
