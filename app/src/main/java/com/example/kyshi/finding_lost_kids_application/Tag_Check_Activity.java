@@ -133,7 +133,6 @@ public class Tag_Check_Activity extends AppCompatActivity {
                         }
                     }
                 }
-
             }
         });
     }

@@ -191,9 +191,10 @@ public class Finding_Kid_Location_Activity extends AppCompatActivity {
                         Log.d("time delay", i + "delayed");
                     }
 
+                    /*
                     if (!httpDeleteTask.isCancelled()) {
                         httpDeleteTask.cancel(true);
-                    }
+                    }*/
 
                     Intent toMainActivity = new Intent(mContext, MainActivity.class);
                     Toast.makeText(mContext, "반납되었습니다.", Toast.LENGTH_LONG).show();
